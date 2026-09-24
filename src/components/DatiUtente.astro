@@ -1,0 +1,357 @@
+---
+// Form dei dati dell'utente (via, regione, data di nascita, classe di merito), in una finestra di
+// dialogo. Unico per tutto il sito: lo aprono il menu utente e la pagina scheda con
+// ipotesi.apriDati(); al salvataggio annuncia i dati nuovi con ipotesi.annuncia().
+// I dati restano nel browser (lib/ipotesi.ts).
+import { ICONE } from "../lib/icone";
+import { CLASSI, REGIONI } from "../lib/ipotesi";
+
+const oggi = new Date().getFullYear();
+// Stessi limiti del backend: da 18 a 110 anni.
+const nascitaMin = `${oggi - 110}-01-01`;
+const nascitaMax = `${oggi - 18}-12-31`;
+---
+
+<dialog id="dati-utente" class="dati" aria-labelledby="dati-titolo">
+  <form id="dati-form" class="dati-form" novalidate>
+    <div class="dati-testa">
+      <h2 id="dati-titolo">I tuoi dati</h2>
+      <button type="button" class="chiudi" data-chiudi aria-label="Chiudi" set:html={ICONE.chiudi} />
+    </div>
+    <p class="muted small">Servono a calcolare i costi: il bollo cambia con la regione, l'assicurazione con la tua età, la tua classe di merito e dove abiti. Se indichi la data di nascita o la classe di merito, stimiamo l'assicurazione per te: data di nascita, classe e via vengono inviate al servizio di stima AI e conservate per non ripetere la domanda.</p>
+
+    <div>
+      <label for="indirizzo">La tua via <span class="facoltativo">(facoltativa)</span></label>
+      <div class="combo">
+        <input id="indirizzo" type="text" role="combobox" autocomplete="off" spellcheck="false"
+               aria-autocomplete="list" aria-expanded="false" aria-controls="indirizzo-lista"
+               aria-describedby="indirizzo-stato" placeholder="Es. Via Roma, Bergamo" />
+        <ul id="indirizzo-lista" class="suggerimenti" role="listbox" aria-label="Vie trovate" hidden></ul>
+      </div>
+      <p id="indirizzo-stato" class="nota small muted" aria-live="polite">Scrivi la via e il comune, poi scegli dall'elenco: la regione si compila da sola.</p>
+      <p class="nota osm muted">Indirizzi © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></p>
+    </div>
+
+    <div class="campi">
+      <div>
+        <label for="regione">Regione di residenza</label>
+        <select id="regione" required>
+          <option value="">Scegli la regione</option>
+          {REGIONI.map(([k, nome]) => <option value={k}>{nome}</option>)}
+        </select>
+      </div>
+      <div>
+        <label for="nascita">La tua data di nascita <span class="facoltativo">(facoltativa)</span></label>
+        <input id="nascita" type="date" min={nascitaMin} max={nascitaMax} />
+      </div>
+      <div>
+        <label for="classe">Classe di merito <span class="facoltativo">(facoltativa)</span></label>
+        <select id="classe" aria-describedby="classe-nota">
+          <option value="">Non la so</option>
+          {CLASSI.map(([k, nome]) => <option value={k}>{nome}</option>)}
+        </select>
+        <p id="classe-nota" class="nota small muted">È scritta sull'attestato di rischio. Se non la indichi, la stima è in 1ª classe.</p>
+      </div>
+    </div>
+
+    <div class="azioni">
+      <button type="button" class="btn btn-secondario" data-chiudi>Annulla</button>
+      <button type="submit" class="btn">Salva</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+  .dati {
+    width: min(560px, calc(100vw - 2 * var(--gutter)));
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--inchiostro);
+    overflow: visible;   /* l'elenco delle vie può uscire dal bordo */
+  }
+  .dati::backdrop {
+    background: rgb(26 26 26 / 45%);
+  }
+  .dati-form {
+    display: grid;
+    gap: 16px;
+    padding: 20px;
+    max-height: calc(100dvh - 34px);
+    overflow-y: auto;
+  }
+  .dati-testa {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dati-testa h2 {
+    font-size: 1.5rem;
+  }
+  .dati-form > p {
+    margin: -8px 0 0;
+  }
+  .chiudi {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--inchiostro);
+    cursor: pointer;
+  }
+  .chiudi:hover {
+    background: var(--surface-2);
+  }
+  .campi {
+    display: grid;
+    gap: 12px;
+  }
+  @media (min-width: 560px) {
+    .campi {
+      grid-template-columns: 1fr 1fr;
+    }
+    .campi > :last-child {
+      grid-column: 1 / -1;
+    }
+  }
+  label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 6px;
+  }
+  .facoltativo {
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .nota {
+    margin: 6px 0 0;
+  }
+  .osm {
+    font-size: 0.75rem;
+  }
+  .combo {
+    position: relative;
+  }
+  .suggerimenti {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    border-color: var(--inchiostro);
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .suggerimenti :global(li) {
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .suggerimenti :global(li[aria-selected="true"]),
+  .suggerimenti :global(li:hover) {
+    background: var(--accent-soft);
+  }
+  .suggerimenti :global(.sugg-regione) {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .azioni {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+</style>
+
+<script>
+  import * as api from "../lib/api";
+  import type { Indirizzo } from "../lib/api";
+  import { esc } from "../lib/formato";
+  import * as ipotesi from "../lib/ipotesi";
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const dialog = $<HTMLDialogElement>("dati-utente");
+  const form = $<HTMLFormElement>("dati-form");
+  const selRegione = $<HTMLSelectElement>("regione");
+  const inNascita = $<HTMLInputElement>("nascita");
+  const selClasse = $<HTMLSelectElement>("classe");
+  const inIndirizzo = $<HTMLInputElement>("indirizzo");
+  const lista = $<HTMLUListElement>("indirizzo-lista");
+  const statoIndirizzo = $("indirizzo-stato");
+  const AIUTO_INDIRIZZO = statoIndirizzo.textContent ?? "";
+
+  // ---------------------------------------------------------------- via
+
+  let scelto: Indirizzo | null = null;   // la via scelta dall'elenco: l'unica che si salva
+  let trovati: Indirizzo[] = [];
+  let attivo = -1;
+  let attesaDigitazione: ReturnType<typeof setTimeout> | undefined;
+  let richiesta: AbortController | null = null;
+
+  function chiudiLista() {
+    lista.hidden = true;
+    inIndirizzo.setAttribute("aria-expanded", "false");
+    inIndirizzo.removeAttribute("aria-activedescendant");
+    attivo = -1;
+  }
+
+  function evidenzia(i: number) {
+    attivo = i;
+    lista.querySelectorAll("li").forEach((li, j) => li.setAttribute("aria-selected", String(j === i)));
+    if (i >= 0) {
+      inIndirizzo.setAttribute("aria-activedescendant", `sugg-${i}`);
+      lista.children[i]?.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  function mostraLista(voci: Indirizzo[]) {
+    trovati = voci;
+    if (!voci.length) {
+      chiudiLista();
+      statoIndirizzo.textContent = "Nessuna via trovata: prova ad aggiungere il comune.";
+      return;
+    }
+    lista.innerHTML = voci.map((v, i) => `<li id="sugg-${i}" role="option" aria-selected="false" data-i="${i}">
+      ${esc(v.etichetta)}<span class="sugg-regione">${esc(ipotesi.nomeRegione(v.regione) ?? v.provincia ?? "")}</span></li>`).join("");
+    lista.hidden = false;
+    inIndirizzo.setAttribute("aria-expanded", "true");
+    statoIndirizzo.textContent = `${voci.length} ${voci.length === 1 ? "via trovata" : "vie trovate"}.`;
+    evidenzia(-1);
+  }
+
+  function scegli(v: Indirizzo) {
+    scelto = v;
+    inIndirizzo.value = v.etichetta;
+    chiudiLista();
+    if (v.regione) {
+      selRegione.value = v.regione;
+      statoIndirizzo.textContent = `Regione impostata: ${ipotesi.nomeRegione(v.regione)}.`;
+    } else {
+      statoIndirizzo.textContent = "Non riconosciamo la regione di questa via: sceglila dal menu qui sotto.";
+    }
+  }
+
+  async function cercaVie(q: string) {
+    richiesta?.abort();
+    richiesta = new AbortController();
+    try {
+      mostraLista(await api.indirizzi(q, richiesta.signal));
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return;
+      chiudiLista();
+      statoIndirizzo.textContent = "Ricerca delle vie non disponibile: scegli la regione dal menu.";
+    }
+  }
+
+  inIndirizzo.addEventListener("input", () => {
+    scelto = null;   // il testo è cambiato: la via scelta non vale più
+    clearTimeout(attesaDigitazione);
+    const q = inIndirizzo.value.trim();
+    if (q.length < 3) {
+      richiesta?.abort();
+      chiudiLista();
+      statoIndirizzo.textContent = AIUTO_INDIRIZZO;
+      return;
+    }
+    attesaDigitazione = setTimeout(() => cercaVie(q), 300);
+  });
+
+  inIndirizzo.addEventListener("keydown", (e) => {
+    if (lista.hidden) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const n = trovati.length;
+      evidenzia(e.key === "ArrowDown" ? (attivo + 1) % n : (attivo - 1 + n) % n);
+    } else if (e.key === "Enter" && attivo >= 0) {
+      e.preventDefault();   // sceglie la via, non invia il form
+      scegli(trovati[attivo]);
+    } else if (e.key === "Escape") {
+      e.preventDefault();   // chiude l'elenco, non la finestra
+      chiudiLista();
+    }
+  });
+
+  // pointerdown + preventDefault: il campo non perde il focus prima della scelta
+  lista.addEventListener("pointerdown", (e) => {
+    const li = (e.target as HTMLElement).closest("li");
+    if (!li) return;
+    e.preventDefault();
+    scegli(trovati[Number(li.dataset.i)]);
+  });
+  inIndirizzo.addEventListener("blur", chiudiLista);
+  // Tornando sul campo, l'elenco già trovato riappare: non serve riscrivere la via.
+  inIndirizzo.addEventListener("focus", () => {
+    if (!scelto && trovati.length && inIndirizzo.value.trim().length >= 3) mostraLista(trovati);
+  });
+
+  // Una regione scelta a mano diversa da quella della via rende la via incoerente: si toglie.
+  selRegione.addEventListener("change", () => {
+    if (scelto?.regione && scelto.regione !== selRegione.value) {
+      scelto = null;
+      inIndirizzo.value = "";
+      statoIndirizzo.textContent = "Hai cambiato regione: la via è stata tolta.";
+    }
+  });
+
+  // ---------------------------------------------------------------- apertura e salvataggio
+
+  function apri() {
+    const attuali = ipotesi.leggi();
+    selRegione.value = attuali?.regione ?? "";
+    inNascita.value = attuali?.nascita ?? "";
+    selClasse.value = attuali?.classe ?? "";
+    scelto = attuali?.indirizzo ?? null;
+    inIndirizzo.value = scelto?.etichetta ?? "";
+    trovati = [];
+    chiudiLista();
+    statoIndirizzo.textContent = AIUTO_INDIRIZZO;
+    if (!dialog.open) dialog.showModal();
+    inIndirizzo.focus();
+  }
+
+  ipotesi.suApriDati(apri);
+  dialog.querySelectorAll("[data-chiudi]").forEach((b) => b.addEventListener("click", () => dialog.close()));
+  // un clic sullo sfondo, fuori dalla finestra, la chiude
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    // Si salva solo una via scelta dall'elenco, mai il testo digitato.
+    if (inIndirizzo.value.trim() && !scelto) {
+      statoIndirizzo.textContent = "Scegli la via dall'elenco, oppure svuota il campo.";
+      inIndirizzo.focus();
+      return;
+    }
+    if (!selRegione.value) {
+      selRegione.reportValidity();
+      return;
+    }
+    if (inNascita.value && !inNascita.checkValidity()) {
+      inNascita.reportValidity();
+      return;
+    }
+    const i: ipotesi.Ipotesi = {
+      regione: selRegione.value,
+      nascita: inNascita.value || null,
+      indirizzo: scelto,
+      classe: selClasse.value || null,
+    };
+    ipotesi.salva(i);
+    dialog.close();
+    ipotesi.annuncia(i);
+  });
+</script>

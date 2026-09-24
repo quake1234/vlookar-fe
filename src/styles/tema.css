@@ -1,0 +1,257 @@
+/* Identità visiva di Vroomy — "registro contabile svizzero": carta chiara, inchiostro, filetti da
+   1px, il numero come elemento grafico. Un solo colore di segnale, riservato ai totali e
+   all'azione principale. Colori, font e misure stanno tutti qui. */
+
+:root {
+  --font: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --carta: #f9f8f6;
+  --carta-2: #f0eee9;         /* campi, tracce delle barre */
+  --inchiostro: #1a1a1a;
+  --grafite: #66645e;         /* testo secondario: 5,6:1 sulla carta */
+  --filo: #e5e5e0;            /* filetti e bordi */
+  --filo-forte: #c9c8c1;      /* bordi dei controlli */
+  --segnale: #ff4500;         /* solo totali e CTA */
+  --su-segnale: #1a1a1a;
+
+  --neg: #b3261e;
+  --neg-soft: #f7e7e5;
+  --warn: #8a5a00;
+
+  /* nomi usati dai componenti */
+  --bg: var(--carta);
+  --surface: var(--carta);
+  --surface-2: var(--carta-2);
+  --text: var(--inchiostro);
+  --muted: var(--grafite);
+  --border: var(--filo);
+  --line: var(--filo);
+  --accent: var(--segnale);
+  --accent-soft: var(--carta-2);
+
+  /* origine dei valori: pieno = calcolato o ufficiale, tratteggiato = stima AI */
+  --tratteggio: repeating-linear-gradient(135deg, currentColor 0 2px, transparent 2px 5px);
+
+  --radius: 2px;
+  --radius-sm: 2px;
+  --gutter: 16px;
+  --max: 1240px;
+  --durata: 180ms;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --carta: #151513;
+    --carta-2: #1f1e1b;
+    --inchiostro: #f2f0eb;
+    --grafite: #a3a198;
+    --filo: #2f2e2a;
+    --filo-forte: #4a4943;
+    --segnale: #ff5a1f;
+    --neg: #f08b83;
+    --neg-soft: #3a1c19;
+    --warn: #e0b35c;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --carta: #151513;
+  --carta-2: #1f1e1b;
+  --inchiostro: #f2f0eb;
+  --grafite: #a3a198;
+  --filo: #2f2e2a;
+  --filo-forte: #4a4943;
+  --segnale: #ff5a1f;
+  --neg: #f08b83;
+  --neg-soft: #3a1c19;
+  --warn: #e0b35c;
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ base */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* L'attributo hidden deve vincere su qualunque display dei componenti. */
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--carta);
+  color: var(--inchiostro);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+a:hover { text-decoration-thickness: 2px; }
+h1, h2, h3 { line-height: 1.1; margin: 0; letter-spacing: -0.02em; font-weight: 700; }
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+@media (min-width: 720px) {
+  :root { --gutter: 32px; }
+}
+
+.muted { color: var(--grafite); }
+.small { font-size: 0.875rem; }
+.icona { width: 20px; height: 20px; flex: none; }
+
+/* Etichetta contabile: maiuscolo, spaziato, monospazio. Solo per nominare campi e voci. */
+.etichetta {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grafite);
+}
+
+/* Cifre allineate in colonna ovunque compaiano importi. */
+.cifra {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ controlli */
+
+label { display: block; }
+
+select, input {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--inchiostro);
+  background: var(--carta);
+  border: 1px solid var(--filo-forte);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  min-height: 46px;
+}
+select:hover:not(:disabled), input:hover { border-color: var(--inchiostro); }
+select:disabled { opacity: 0.45; }
+
+:focus-visible {
+  outline: 2px solid var(--inchiostro);
+  outline-offset: 2px;
+}
+
+/* Pulsante principale: l'unico elemento a colori insieme ai totali. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-weight: 700;
+  border: 1px solid var(--segnale);
+  border-radius: var(--radius-sm);
+  padding: 12px 22px;
+  min-height: 48px;
+  background: var(--segnale);
+  color: var(--su-segnale);
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn:hover { background: color-mix(in srgb, var(--segnale) 88%, var(--inchiostro)); text-decoration: none; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Pulsante secondario: contorno a inchiostro. */
+.btn-secondario {
+  background: transparent;
+  color: var(--inchiostro);
+  border: 1px solid var(--inchiostro);
+}
+.btn-secondario:hover { background: var(--carta-2); }
+
+.btn-link {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  color: var(--inchiostro);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ origine dei valori */
+
+/* Marca d'origine: un campione (pieno o tratteggiato) e il nome, in monospazio. */
+.origine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--grafite);
+  white-space: nowrap;
+}
+.origine::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  flex: none;
+  color: var(--inchiostro);
+  background: currentColor;
+}
+.origine-stima_llm::before {
+  background: var(--tratteggio);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.origine-ufficiale::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.avviso {
+  border-left: 3px solid var(--inchiostro);
+  background: var(--carta-2);
+  padding: 14px 16px;
+}
+/* Avviso con un'azione (Riprova, Scegli un'auto): testo e pulsante affiancati da tablet in su. */
+.avviso-azione {
+  display: grid;
+  gap: 12px;
+}
+.avviso-azione p { margin: 0; }
+@media (min-width: 560px) {
+  .avviso-azione {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn, select { transition: background-color var(--durata) ease-out, border-color var(--durata) ease-out, color var(--durata) ease-out; }
+}

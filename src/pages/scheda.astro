@@ -1,0 +1,929 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Scheda auto — Vroomy">
+  <div class="wrap">
+    <nav class="briciole" aria-label="Percorso">
+      <a href="/">Auto</a><span aria-hidden="true">/</span><span id="bc-marca">…</span><span aria-hidden="true">/</span><span id="bc-modello">…</span>
+    </nav>
+
+    <header class="testata">
+      <h1 id="titolo">Scheda auto</h1>
+      <p id="sottotitolo" class="allestimento"></p>
+      <dl id="specifiche" class="specifiche" hidden></dl>
+    </header>
+
+    <!-- i dati con cui sono calcolati i costi: si cambiano dal form, non qui -->
+    <div id="profilo" class="profilo" hidden>
+      <dl id="profilo-dati" class="profilo-dati"></dl>
+      <button id="modifica" class="btn-link" type="button">Modifica i tuoi dati</button>
+    </div>
+
+    <div id="servono-dati" class="avviso avviso-azione" hidden>
+      <p>Per calcolare bollo e assicurazione servono la tua regione e, se vuoi una stima su misura, età, classe di merito e via.</p>
+      <button id="inserisci-dati" class="btn" type="button">Inserisci i dati</button>
+    </div>
+
+    <div id="attesa" class="attesa" role="status" aria-live="polite" hidden>
+      <span class="attesa-barra" aria-hidden="true"></span>
+      <p><strong>Stiamo preparando la scheda.</strong> La prima volta che qualcuno cerca quest'auto può volerci fino a un minuto; poi è immediata.</p>
+    </div>
+
+    <div id="errore" class="avviso avviso-azione" role="alert" hidden></div>
+    <div id="senza-stima" class="avviso avviso-azione" hidden></div>
+
+    <!-- ============================================================ calcolatore -->
+    <div id="calcolatore" class="calcolatore" hidden>
+      <section class="conto" aria-labelledby="conto-titolo">
+        <h2 id="conto-titolo" class="visually-hidden">Voci di costo</h2>
+
+        <article class="voce" aria-labelledby="bollo-nome">
+          <div class="voce-testa">
+            <h3 id="bollo-nome" class="etichetta">Bollo</h3>
+            <span class="origine origine-calcolato">Calcolato</span>
+          </div>
+          <p class="voce-importo cifra" id="bollo-importo">—</p>
+          <p class="voce-nota" id="bollo-nota"></p>
+        </article>
+
+        <article class="voce" aria-labelledby="ass-nome">
+          <div class="voce-testa">
+            <h3 id="ass-nome" class="etichetta">Assicurazione RC</h3>
+            <span class="origine origine-stima_llm">Stima AI</span>
+          </div>
+          <p class="voce-importo cifra" id="ass-importo">—</p>
+          <p id="ass-per-chi" class="per-chi"></p>
+          <p class="voce-nota" id="ass-nota"></p>
+        </article>
+
+        <article class="voce" aria-labelledby="tag-nome">
+          <div class="voce-testa">
+            <h3 id="tag-nome" class="etichetta">Tagliando</h3>
+            <span class="origine origine-stima_llm">Stima AI</span>
+          </div>
+          <dl class="officine">
+            <div><dt>Officina autorizzata</dt><dd id="tag-aut" class="cifra">—</dd></div>
+            <div><dt>Officina di fiducia</dt><dd id="tag-mec" class="cifra">—</dd></div>
+          </dl>
+          <p class="voce-nota" id="tag-nota"></p>
+        </article>
+
+      </section>
+
+      <!-- ============================================================ cruscotto -->
+      <aside class="cruscotto" aria-labelledby="totale-nome">
+        <div class="cruscotto-interno">
+          <h2 id="totale-nome" class="etichetta">Mantenimento annuo</h2>
+          <div id="totale" class="totale" aria-live="polite">
+            <p class="totale-riga"><span class="totale-da">da</span><span id="tot-min" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
+            <p class="totale-riga"><span class="totale-da">a</span><span id="tot-max" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
+          </div>
+          <p id="totale-stato" class="totale-stato" hidden></p>
+          <p class="totale-composizione">Assicurazione + bollo + tagliandi <span class="origine origine-calcolato">Calcolato</span></p>
+
+        </div>
+      </aside>
+    </div>
+
+    <!-- riepilogo fisso in basso sul telefono, dove il cruscotto non è visibile -->
+    <div id="mini" class="mini" aria-hidden="true" hidden>
+      <span class="etichetta">Mantenimento annuo</span>
+      <span id="mini-valore" class="mini-valore cifra">—</span>
+    </div>
+
+    <div id="resto" class="resto" hidden></div>
+  </div>
+</Base>
+
+<style>
+  .briciole {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 24px;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--grafite);
+  }
+  .briciole a {
+    color: var(--grafite);
+  }
+
+  /* ---- testata: il nome dell'auto, poi una riga di specifiche separate da filetti */
+  .testata {
+    padding: 20px 0 28px;
+    border-bottom: 1px solid var(--inchiostro);
+  }
+  .testata:has(+ .profilo:not([hidden])) {
+    border-bottom-color: var(--filo);
+  }
+  .testata h1 {
+    font-size: clamp(2.5rem, 7.5vw, 5.5rem);
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+  .allestimento {
+    margin: 10px 0 0;
+    font-family: var(--mono);
+    font-size: 1rem;
+  }
+  .specifiche {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin: 28px 0 0;
+    border-top: 1px solid var(--filo);
+  }
+  .specifiche :global(div) {
+    padding: 12px 16px 0 0;
+  }
+  .specifiche :global(dt) {
+    margin-bottom: 4px;
+  }
+  .specifiche :global(dd) {
+    margin: 0;
+    font-weight: 500;
+  }
+  .specifiche :global(.spec-nota) {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--grafite);
+  }
+  .specifiche :global(.origine) {
+    margin-top: 6px;
+  }
+
+  .avviso {
+    margin-top: 24px;
+  }
+
+  .profilo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--inchiostro);
+  }
+  .profilo-dati {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    margin: 0;
+  }
+  .profilo-dati :global(dt) {
+    margin-bottom: 2px;
+  }
+  .profilo-dati :global(dd) {
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+
+  .attesa {
+    margin-top: 32px;
+    max-width: 44em;
+  }
+  .attesa p {
+    margin: 12px 0 0;
+  }
+  .attesa-barra {
+    display: block;
+    height: 2px;
+    background: var(--filo);
+    position: relative;
+    overflow: hidden;
+  }
+  .attesa-barra::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 30%;
+    background: var(--inchiostro);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .attesa-barra::after {
+      animation: scorri 1.4s ease-in-out infinite;
+    }
+    @keyframes scorri {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(340%); }
+    }
+  }
+
+  /* ---- calcolatore: conto a sinistra, cruscotto a destra */
+  .calcolatore {
+    display: grid;
+    gap: 0;
+  }
+  .conto {
+    order: 2;
+  }
+  .cruscotto {
+    order: 1;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--inchiostro);
+  }
+  @media (min-width: 1000px) {
+    .calcolatore {
+      grid-template-columns: minmax(0, 62fr) minmax(0, 38fr);
+    }
+    .conto {
+      order: 1;
+      padding-right: 48px;
+      border-right: 1px solid var(--filo);
+    }
+    .cruscotto {
+      order: 2;
+      padding: 0 0 0 40px;
+      border-bottom: 0;
+    }
+    .cruscotto-interno {
+      position: sticky;
+      top: 80px;
+      padding-top: 28px;
+    }
+  }
+
+  .voce {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 20px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--filo);
+  }
+  .voce > :not(.voce-testa, .voce-importo) {
+    grid-column: 1 / -1;
+  }
+  .voce-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 14px;
+  }
+  .voce-testa h3 {
+    color: var(--inchiostro);
+  }
+  .voce-importo {
+    margin: 0;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .voce-importo :global(small) {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    color: var(--grafite);
+  }
+  .voce-nota {
+    margin: 4px 0 0;
+    font-size: 0.875rem;
+    color: var(--grafite);
+    max-width: 62ch;
+  }
+  .voce-nota :global(a) {
+    color: var(--grafite);
+  }
+
+  .per-chi {
+    margin: 10px 0 0;
+    font-size: 0.9375rem;
+  }
+
+  .officine {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 14px 0 0;
+  }
+  .officine div {
+    padding: 10px 16px 0 0;
+  }
+  .officine dt {
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+  .officine dd {
+    margin: 2px 0 0;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  /* ---- il totale: cifre enormi, una sopra l'altra, allineate a destra come in un registro */
+  .totale {
+    margin: 14px 0 0;
+  }
+  .totale-riga {
+    display: grid;
+    grid-template-columns: 1.6em 1fr auto;
+    align-items: baseline;
+    margin: 0;
+    color: var(--segnale);
+  }
+  .totale-riga + .totale-riga {
+    border-top: 1px solid var(--filo);
+  }
+  .totale-da,
+  .totale-euro {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+  .totale-euro {
+    padding-left: 8px;
+  }
+  .totale-num {
+    font-size: clamp(3.75rem, 8vw, 6.5rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 1.02;
+    text-align: right;
+  }
+  .totale.in-attesa .totale-num {
+    color: var(--filo-forte);
+  }
+  .totale-composizione {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 12px;
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--inchiostro);
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+  .totale-stato {
+    margin: 8px 0 0;
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+  /* ---- riepilogo fisso sul telefono */
+  .mini {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
+    background: var(--carta);
+    border-top: 1px solid var(--inchiostro);
+  }
+  .mini-valore {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--segnale);
+  }
+  @media (min-width: 1000px) {
+    .mini {
+      display: none;
+    }
+  }
+
+  /* ---- il resto della scheda: titolo a sinistra, contenuto a destra */
+  .resto {
+    margin-top: 56px;
+  }
+  .resto :global(.blocco) {
+    display: grid;
+    gap: 12px;
+    padding: 24px 0 32px;
+    border-top: 1px solid var(--inchiostro);
+  }
+  .resto :global(.blocco-titolo) {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+  }
+  .resto :global(.blocco-titolo h2) {
+    font-size: 1.375rem;
+  }
+  .resto :global(.blocco-corpo) {
+    min-width: 0;
+    max-width: 72ch;
+  }
+  .resto :global(.blocco-corpo > p) {
+    margin: 0;
+  }
+  @media (min-width: 1000px) {
+    .resto :global(.blocco) {
+      grid-template-columns: 3fr 9fr;
+      gap: 40px;
+    }
+  }
+  .resto :global(.elenco) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .resto :global(.elenco > li) {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--filo);
+  }
+  .resto :global(.elenco > li:first-child) {
+    padding-top: 0;
+  }
+  .resto :global(.elenco > li:last-child) {
+    border-bottom: 0;
+  }
+  .resto :global(.elenco p) {
+    margin: 4px 0 0;
+    color: var(--grafite);
+  }
+  .resto :global(.problema-testa) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+  }
+  .resto :global(.gravita) {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border: 1px solid currentColor;
+  }
+  .resto :global(.gravita-alta) {
+    color: var(--neg);
+  }
+  .resto :global(.gravita-media) {
+    color: var(--warn);
+  }
+  .resto :global(.gravita-bassa) {
+    color: var(--grafite);
+  }
+  .resto :global(.costi-riparazione) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+  }
+  .resto :global(.costi-riparazione span) {
+    color: var(--grafite);
+  }
+  .resto :global(.costi-riparazione strong) {
+    color: var(--inchiostro);
+    font-weight: 500;
+  }
+  .resto :global(.nota-fonte) {
+    margin: 14px 0 0 !important;
+    font-size: 0.8125rem;
+    color: var(--grafite);
+  }
+
+  /* revisioni UK: due barre per età, questo motore e la media */
+  .resto :global(.mot) {
+    display: grid;
+    gap: 14px;
+  }
+  .resto :global(.mot-riga) {
+    display: grid;
+    grid-template-columns: 72px 1fr 56px;
+    gap: 4px 12px;
+    align-items: center;
+    font-size: 0.875rem;
+  }
+  .resto :global(.mot-eta) {
+    grid-row: span 2;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+  }
+  .resto :global(.mot-traccia) {
+    height: 10px;
+    background: var(--carta-2);
+  }
+  .resto :global(.mot-barra) {
+    height: 100%;
+    background: var(--inchiostro);
+  }
+  .resto :global(.mot-barra.media) {
+    background: var(--filo-forte);
+  }
+  .resto :global(.mot-num) {
+    font-family: var(--mono);
+    text-align: right;
+  }
+  .resto :global(.mot-legenda) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin: 0 0 16px !important;
+    font-size: 0.8125rem;
+    color: var(--grafite);
+  }
+  .resto :global(.mot-legenda span::before) {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 10px;
+    margin-right: 8px;
+    background: var(--inchiostro);
+  }
+  .resto :global(.mot-legenda .l-media::before) {
+    background: var(--filo-forte);
+  }
+  .resto :global(.nota-finale) {
+    padding-top: 20px;
+    border-top: 1px solid var(--inchiostro);
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--grafite);
+  }
+
+  @media (max-width: 999px) {
+    :global(main) {
+      padding-bottom: 120px;
+    }
+  }
+</style>
+
+<script>
+  import * as api from "../lib/api";
+  import type { Intervallo, IntervalloConNota, Scheda } from "../lib/api";
+  import { cifra, svuota } from "../lib/anima";
+  import { esc, formatData, formatEuro, formatEuroCent, formatIntervallo, formatIntero, formatNumero, nomeLeggibile } from "../lib/formato";
+  import * as ipotesi from "../lib/ipotesi";
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const attesa = $("attesa");
+  const errore = $("errore");
+  const senzaStima = $("senza-stima");
+  const servonoDati = $("servono-dati");
+  const calcolatore = $("calcolatore");
+  const resto = $("resto");
+  const mini = $("mini");
+
+  const id = Number(new URLSearchParams(location.search).get("id"));
+
+  // ---------------------------------------------------------------- stato
+
+  const anno = ipotesi.annoDaUrl(location.search);   // dell'auto cercata, scelto nella home; null = nuova
+
+  function parametri(i: ipotesi.Ipotesi | null): api.ParametriScheda {
+    return { regione: i?.regione, anno, nascita: i?.nascita, classe: i?.classe, indirizzo: i?.indirizzo };
+  }
+
+  /** I dati con cui sono calcolati i costi, in sola lettura. */
+  function mostraProfilo(i: ipotesi.Ipotesi) {
+    const regione = ipotesi.nomeRegione(i.regione) ?? i.regione;
+    const voci: Array<[string, string]> = [
+      ["Dove vivi", i.indirizzo ? `${i.indirizzo.etichetta}, ${regione}` : regione],
+      ["Auto", anno ? `Immatricolata nel ${anno}` : "Nuova"],
+      ["Data di nascita", i.nascita ? formatData(i.nascita) : "Non indicata"],
+      ["Classe di merito", ipotesi.nomeClasse(i.classe) ?? "Non indicata"],
+    ];
+    $("profilo-dati").innerHTML = voci.map(([k, v]) => `<div><dt class="etichetta">${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");
+    $("profilo").hidden = false;
+  }
+
+  // ---------------------------------------------------------------- testi
+
+  const ETICHETTA: Record<string, string> = { ufficiale: "Dato ufficiale", stima_llm: "Stima AI", calcolato: "Calcolato" };
+  const origine = (o: string) => `<span class="origine origine-${esc(o)}">${ETICHETTA[o] ?? esc(o)}</span>`;
+  const intervallo = (r: Intervallo | null | undefined) => formatIntervallo(r ?? null);
+  const frase = (n: string) => n[0].toUpperCase() + n.slice(1) + ".";
+  const MANCA: Record<string, string> = { assicurazione: "l'assicurazione", bollo: "il bollo", tagliando: "il tagliando" };
+
+  /** ['assicurazione', 'bollo'] → "Mancano l'assicurazione e il bollo" */
+  function elencoMancanti(chiavi: string[]): string {
+    const voci = chiavi.map((k) => MANCA[k] ?? k);
+    const testo = voci.length > 1 ? voci.slice(0, -1).join(", ") + " e " + voci.at(-1) : voci[0] ?? "";
+    return (voci.length > 1 ? "Mancano " : "Manca ") + testo;
+  }
+
+  // ---------------------------------------------------------------- assicurazione personalizzata
+
+  // Esito dell'ultima richiesta di stima personalizzata: 'limite' | 'errore' | null.
+  let esitoAssicurazione: string | null = null;
+  const inAttesa = (c: Scheda) => !!c.assicurazione?.da_calcolare && esitoAssicurazione === null;
+
+  function perChi(a: NonNullable<Scheda["assicurazione"]>): string {
+    if (!a.personalizzata) return "Media italiana, 1ª classe di merito.";
+    const parti = [a.eta !== null ? `${a.eta} anni` : null, a.classe ? ipotesi.nomeClasse(a.classe) : null, a.luogo].filter(Boolean);
+    return `Per te: ${parti.join(", ")}.`;
+  }
+
+  function notaEsitoAssicurazione(): string {
+    if (esitoAssicurazione === "limite") return "Troppe richieste nell'ultima ora: la stima su misura arriverà più tardi.";
+    if (esitoAssicurazione === "errore") return "La stima su misura non è disponibile ora: riprova più tardi.";
+    return "";
+  }
+
+  // ---------------------------------------------------------------- voci di costo e totale
+
+  function dettaglioBollo(b: Scheda["bollo"]): string {
+    const righe: string[] = [];
+    if (b.input) {
+      const euro = b.input.euro_class?.replace(/^\s*euro\s*/i, "");
+      const da = b.input.origine === "ufficiale" ? "dati ufficiali" : "stima AI";
+      righe.push(`${esc(b.input.kw)} kW` + (euro ? `, Euro ${esc(euro)}` : "") + ` (da ${da})`);
+    }
+    if (b.regione_applicata) righe.push(`tariffa ${esc(ipotesi.nomeRegione(b.regione_applicata) ?? b.regione_applicata)}`);
+    if (b.importo !== null && b.superbollo) righe.push(`di cui superbollo ${esc(formatEuroCent(b.superbollo))}`);
+    const testo = righe.length ? esc(frase(righe.join(", "))) + " " : "";
+    const note = b.note.map((n) => esc(frase(n))).join(" ");
+    const fonti = (b.fonti ?? []).map((f) => `Fonte: ${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>` : esc(f.name)}.`).join(" ");
+    return [testo, note, fonti].filter(Boolean).join(" ");
+  }
+
+  function noteTagliando(c: Scheda): string {
+    const t = c.tagliando;
+    if (!t) return "";
+    const note: string[] = [];
+    if (t.intervallo_km || t.intervallo_mesi) {
+      note.push("Ogni " + [t.intervallo_km ? `${formatNumero(t.intervallo_km)} km` : "", t.intervallo_mesi ? `${t.intervallo_mesi} mesi` : ""]
+        .filter(Boolean).join(" o ") + ".");
+    }
+    for (const n of t.note) note.push(frase(n));
+    if (t.nota) note.push(t.nota);
+    return note.join(" ");
+  }
+
+  function importo(el: HTMLElement, r: Intervallo | null, testoVuoto = "Non disponibile") {
+    if (!r) {
+      el.innerHTML = `<small>${esc(testoVuoto)}</small>`;
+      return;
+    }
+    el.textContent = intervallo(r);
+  }
+
+  function renderVoci(c: Scheda) {
+    const b = $("bollo-importo");
+    if (c.bollo.importo !== null) b.textContent = formatEuroCent(c.bollo.importo);
+    else b.innerHTML = `<small>Non calcolabile</small>`;
+    $("bollo-nota").innerHTML = dettaglioBollo(c.bollo);
+
+    const ass = c.assicurazione;
+    if (inAttesa(c)) $("ass-importo").innerHTML = `<small>In calcolo…</small>`;
+    else importo($("ass-importo"), ass && ass.min !== null && ass.max !== null ? { min: ass.min, max: ass.max } : null);
+    $("ass-per-chi").textContent = ass
+      ? (inAttesa(c) ? "Stiamo stimando il premio con la tua età, la tua classe e la tua via: può volerci fino a un minuto." : perChi(ass))
+      : "";
+    $("ass-nota").textContent = ass && !inAttesa(c)
+      ? [ass.fascia ? `Guidatore ${ass.fascia}${ass.eta !== null ? ` (hai ${ass.eta} anni)` : ""}.` : "",
+         ...ass.note.map(frase), notaEsitoAssicurazione(), ass.nota ?? ""].filter(Boolean).join(" ")
+      : "";
+
+    $("tag-aut").textContent = intervallo(c.tagliando?.officina_autorizzata) ?? "Non disponibile";
+    $("tag-mec").textContent = intervallo(c.tagliando?.meccanico) ?? "Non disponibile";
+    $("tag-nota").textContent = noteTagliando(c);
+  }
+
+  function renderTotale(c: Scheda) {
+    const m = c.mantenimento;
+    const totale = $("totale");
+    const stato = $("totale-stato");
+    const min = $("tot-min");
+    const max = $("tot-max");
+    totale.classList.toggle("in-attesa", inAttesa(c));
+
+    if (inAttesa(c) || m.min === null || m.max === null) {
+      svuota(min, "—");
+      svuota(max, "—");
+      $("mini-valore").textContent = "—";
+      stato.textContent = inAttesa(c) ? "Stiamo stimando la tua assicurazione." : elencoMancanti(m.mancano) + ": totale non calcolabile.";
+      stato.hidden = false;
+      return;
+    }
+    stato.hidden = true;
+    cifra(min, m.min);
+    cifra(max, m.max);
+    $("mini-valore").textContent = `${formatIntero(m.min)} – ${formatEuro(m.max)}`;
+  }
+
+
+  function renderCosti(c: Scheda) {
+    renderVoci(c);
+    renderTotale(c);
+    calcolatore.hidden = false;
+    mini.hidden = false;
+  }
+
+  // ---------------------------------------------------------------- testata e resto della scheda
+
+  function renderTesta(s: Scheda) {
+    const a = s.allestimento;
+    const marca = nomeLeggibile(a.marca);
+    const modello = nomeLeggibile(a.modello);
+    document.title = `${marca} ${modello} ${a.nome} — Vroomy`;
+    $("titolo").textContent = `${marca} ${modello}`;
+    $("sottotitolo").textContent = a.nome;
+    $("bc-marca").textContent = marca;
+    $("bc-modello").textContent = modello;
+
+    const st = s.stima;
+    // le note sul prezzo sono lunghe: stanno nel blocco "Prezzo", sotto il calcolatore
+    const prezzo = (r: IntervalloConNota | null | undefined) => r
+      ? esc(intervallo(r))
+      : `<span class="spec-nota">Non disponibile</span>`;
+    const spec: Array<[string, string, string | null]> = [];
+    if (a.alimentazione) spec.push(["Alimentazione", esc(a.alimentazione), null]);
+    if (a.in_produzione !== null) spec.push(["Stato", a.in_produzione ? "In vendita" : "Fuori produzione", null]);
+    if (s.dati_ufficiali) spec.push(["Motore", esc(s.dati_ufficiali.codice_motore), "ufficiale"]);
+    if (st && (a.in_produzione !== false || st.prezzo_nuovo_eur)) spec.push(["Prezzo da nuova", prezzo(st.prezzo_nuovo_eur), "stima_llm"]);
+    if (st) spec.push(["Prezzo usata", prezzo(st.prezzo_usato_eur), "stima_llm"]);
+    const dl = $("specifiche");
+    dl.innerHTML = spec.map(([k, v, o]) => `<div><dt class="etichetta">${esc(k)}</dt><dd>${v}</dd>${o ? origine(o) : ""}</div>`).join("");
+    dl.hidden = spec.length === 0;
+  }
+
+  function blocco(titolo: string, o: string | null, corpo: string) {
+    return `<section class="blocco">
+      <div class="blocco-titolo"><h2>${esc(titolo)}</h2>${o ? origine(o) : ""}</div>
+      <div class="blocco-corpo">${corpo}</div>
+    </section>`;
+  }
+
+  function renderResto(s: Scheda) {
+    const st = s.stima;
+    const parti: string[] = [];
+    if (st) {
+      const note = [
+        st.prezzo_nuovo_eur?.nota ? `<li><strong>Da nuova, ${esc(intervallo(st.prezzo_nuovo_eur))}</strong><p>${esc(st.prezzo_nuovo_eur.nota)}</p></li>` : "",
+        st.prezzo_usato_eur?.nota ? `<li><strong>Usata, ${esc(intervallo(st.prezzo_usato_eur))}</strong><p>${esc(st.prezzo_usato_eur.nota)}</p></li>` : "",
+      ].join("");
+      if (note) parti.push(blocco("Prezzo", "stima_llm", `<ul class="elenco">${note}</ul>`));
+      if (st.testo) parti.push(blocco("In breve", "stima_llm", `<p>${esc(st.testo)}</p>`));
+
+      const problemi = st.problemi.length
+        ? `<ul class="elenco">${st.problemi.map((p) => {
+            const costi = [
+              p.costo_officina_autorizzata_eur ? `<span>Officina autorizzata <strong>${esc(intervallo(p.costo_officina_autorizzata_eur))}</strong></span>` : "",
+              p.costo_meccanico_eur ? `<span>Meccanico di fiducia <strong>${esc(intervallo(p.costo_meccanico_eur))}</strong></span>` : "",
+              !p.costo_officina_autorizzata_eur && !p.costo_meccanico_eur && p.costo_riparazione_testo
+                ? `<span>Riparazione: <strong>${esc(p.costo_riparazione_testo)}</strong></span>` : "",
+            ].join("");
+            return `<li>
+              <div class="problema-testa"><strong>${esc(p.titolo)}</strong>${p.gravita ? `<span class="gravita gravita-${esc(p.gravita)}">Gravità ${esc(p.gravita)}</span>` : ""}</div>
+              <p>${esc(p.descrizione)}</p>
+              ${costi ? `<div class="costi-riparazione">${costi}</div>` : ""}
+            </li>`;
+          }).join("")}</ul>`
+        : `<p class="muted">Nessun problema tipico segnalato.</p>`;
+      parti.push(blocco("Problemi tipici", "stima_llm", problemi));
+
+      if (st.richiami?.length) {
+        parti.push(blocco("Richiami ufficiali", "stima_llm", `
+          <ul class="elenco">${st.richiami.map((r) => `<li><strong>${esc(r.descrizione)}</strong>
+            ${r.periodo ? `<p>Esemplari prodotti: ${esc(r.periodo)}</p>` : ""}</li>`).join("")}</ul>
+          <p class="nota-fonte">I richiami sono gratuiti presso la rete ufficiale: con il numero di telaio si verifica se sono stati eseguiti.</p>`));
+      }
+      if (st.cosa_controllare?.length) {
+        parti.push(blocco("Prima di comprarla usata", "stima_llm",
+          `<ul class="elenco">${st.cosa_controllare.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`));
+      }
+    }
+
+    const u = s.dati_ufficiali;
+    if (u && u.bocciature_mot.length) {
+      const fonte = u.bocciature_mot[0];
+      const righe = u.bocciature_mot.map((m) => `<div class="mot-riga">
+        <span class="mot-eta">${esc(m.age_years)} anni</span>
+        <div class="mot-traccia"><div class="mot-barra" style="width:${Number(m.barra)}%"></div></div>
+        <span class="mot-num">${esc(formatNumero(m.fail_pct))}%</span>
+        ${m.media_parco_pct !== null && m.barra_media !== null ? `<div class="mot-traccia"><div class="mot-barra media" style="width:${Number(m.barra_media)}%"></div></div>
+          <span class="mot-num muted">${esc(formatNumero(m.media_parco_pct))}%</span>` : ""}
+      </div>`).join("");
+      parti.push(blocco("Affidabilità alla revisione UK", "ufficiale", `
+        <p class="mot-legenda"><span>Motore ${esc(u.codice_motore)}</span><span class="l-media">Media delle auto della stessa età</span></p>
+        <div class="mot">${righe}</div>
+        <p class="nota-fonte">Percentuale di auto bocciate alla revisione britannica (MOT). Fonte: ${fonte.fonte_url
+          ? `<a href="${esc(fonte.fonte_url)}" target="_blank" rel="noopener">${esc(fonte.fonte)}</a>` : esc(fonte.fonte)}</p>`));
+    }
+
+    if (st) {
+      parti.push(`<p class="nota-finale">Stime AI generate da ${esc(st.modello_llm)} il ${esc(formatData(st.data))}. Sono indicative: verificale prima di decidere.</p>`);
+    }
+    resto.innerHTML = parti.join("");
+    resto.hidden = parti.length === 0;
+  }
+
+  function renderSenzaStima(s: Scheda) {
+    if (s.stima) {
+      senzaStima.hidden = true;
+      return;
+    }
+    senzaStima.innerHTML = `<p>${esc(s.stima_non_disponibile === "limite"
+      ? "Abbiamo ricevuto troppe richieste nell'ultima ora. Riprova più tardi per vedere prezzo, assicurazione, tagliando e problemi tipici."
+      : "Il servizio di stima non risponde in questo momento. Riprova tra poco per vedere prezzo, assicurazione, tagliando e problemi tipici.")}</p>
+      <button type="button" class="btn" data-riprova>Riprova</button>`;
+    senzaStima.hidden = false;
+  }
+
+  function render(s: Scheda) {
+    renderTesta(s);
+    renderSenzaStima(s);
+    renderResto(s);
+    renderCosti(s);
+  }
+
+  // ---------------------------------------------------------------- caricamento
+
+  let turnoCarica = 0;
+
+  /** Se la scheda aspetta la stima personalizzata, la chiede e poi ricarica la scheda. */
+  async function completaAssicurazione(s: Scheda, p: api.ParametriScheda, turno: number) {
+    if (!s.assicurazione?.da_calcolare) return;
+    let stato: string;
+    try {
+      stato = (await api.assicurazione(id, p)).stato;
+    } catch {
+      stato = "errore";
+    }
+    if (turno !== turnoCarica) return;   // nel frattempo l'utente ha cambiato dati
+    if (stato === "pronta") {
+      try {
+        render(await api.scheda(id, p));
+        return;
+      } catch {
+        stato = "errore";
+      }
+    }
+    esitoAssicurazione = stato;
+    render(s);
+  }
+
+  async function carica(i: ipotesi.Ipotesi | null) {
+    const turno = ++turnoCarica;
+    esitoAssicurazione = null;
+    errore.hidden = true;
+    attesa.hidden = false;
+    const p = parametri(i);
+    try {
+      const s = await api.scheda(id, p);
+      if (turno !== turnoCarica) return;
+      render(s);
+      completaAssicurazione(s, p, turno);
+    } catch (e) {
+      console.error(e);
+      calcolatore.hidden = true;
+      mini.hidden = true;
+      if (e instanceof api.ErroreApi && e.status === 404) mostraErrore("Quest'auto non è nel nostro catalogo.", true);
+      else mostraErrore("Non riusciamo a caricare la scheda. Controlla la connessione e riprova.");
+    } finally {
+      if (turno === turnoCarica) attesa.hidden = true;
+    }
+  }
+
+  function mostraErrore(testo: string, versoHome = false) {
+    errore.innerHTML = `<p>${esc(testo)}</p>` + (versoHome
+      ? `<a class="btn" href="/">Scegli un'auto</a>`
+      : `<button type="button" class="btn" data-riprova>Riprova</button>`);
+    errore.hidden = false;
+  }
+
+  /** Dati assenti (primo accesso o cancellati): la scheda aspetta, e il form si apre. */
+  function chiediDati() {
+    $("profilo").hidden = true;
+    calcolatore.hidden = true;
+    mini.hidden = true;
+    resto.hidden = true;
+    errore.hidden = true;
+    servonoDati.hidden = false;
+    ipotesi.apriDati();
+  }
+
+  // ---------------------------------------------------------------- eventi
+
+  $("modifica").addEventListener("click", ipotesi.apriDati);
+  $("inserisci-dati").addEventListener("click", ipotesi.apriDati);
+
+  // Dati salvati o cancellati dal form o dal menu utente.
+  ipotesi.suCambio((i) => {
+    if (!Number.isInteger(id) || id <= 0) return;
+    if (!i) return chiediDati();
+    servonoDati.hidden = true;
+    mostraProfilo(i);
+    carica(i);
+  });
+
+  // "Riprova" compare sia nell'errore di rete sia quando manca la stima.
+  document.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("[data-riprova]")) carica(ipotesi.leggi());
+  });
+
+  if (!Number.isInteger(id) || id <= 0) {
+    mostraErrore("Nessuna auto selezionata.", true);
+  } else {
+    const salvate = ipotesi.leggi();
+    if (salvate) {
+      mostraProfilo(salvate);
+      carica(salvate);
+    } else {
+      chiediDati();
+      // Nel frattempo si prepara la stima: la risposta finisce in cache e arriverà subito.
+      api.scheda(id).catch(() => {});
+    }
+  }
+</script>

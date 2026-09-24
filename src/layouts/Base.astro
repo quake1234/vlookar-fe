@@ -1,0 +1,130 @@
+---
+import "../styles/tema.css";
+import DatiUtente from "../components/DatiUtente.astro";
+import MenuUtente from "../components/MenuUtente.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  legenda?: boolean;   // la home la mostra già nel corpo della pagina
+}
+
+const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazione, bollo e problemi tipici.", legenda = true } = Astro.props;
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="barra">
+      <div class="wrap barra-interno">
+        <a href="/" class="logo" aria-label="Vroomy, torna alla home">vroomy</a>
+        <div class="barra-destra">
+          <nav class="small"><a href="/">Scegli un'auto</a></nav>
+          <MenuUtente />
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    {legenda && <footer class="piede">
+      <div class="wrap legenda">
+        <p class="legenda-titolo">Da dove vengono i numeri</p>
+        <dl>
+          <div><dt><span class="origine origine-calcolato">Calcolato</span></dt><dd>dal codice, con le regole ufficiali: il bollo</dd></div>
+          <div><dt><span class="origine origine-ufficiale">Dato ufficiale</span></dt><dd>da una fonte pubblica, sempre citata</dd></div>
+          <div><dt><span class="origine origine-stima_llm">Stima AI</span></dt><dd>indicativa: verificala prima di decidere</dd></div>
+        </dl>
+      </div>
+    </footer>}
+
+    <DatiUtente />
+  </body>
+</html>
+
+<style>
+  .barra {
+    background: var(--carta);
+    border-bottom: 1px solid var(--inchiostro);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .barra-interno {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+  }
+  .logo {
+    font-weight: 700;
+    font-size: 1.375rem;
+    letter-spacing: -0.045em;
+    color: var(--inchiostro);
+    text-decoration: none;
+  }
+  .barra-destra {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  nav a {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+  }
+  main {
+    padding-bottom: 72px;
+  }
+  .piede {
+    border-top: 1px solid var(--inchiostro);
+    padding: 20px 0 32px;
+  }
+  .legenda {
+    display: grid;
+    gap: 10px;
+  }
+  .legenda-titolo {
+    margin: 0;
+    font-weight: 700;
+  }
+  .legenda dl {
+    display: grid;
+    gap: 8px 32px;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+  .legenda dl div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: baseline;
+  }
+  .legenda dd {
+    margin: 0;
+  }
+  .legenda .origine {
+    color: var(--inchiostro);
+  }
+  @media (min-width: 900px) {
+    .legenda {
+      grid-template-columns: 3fr 9fr;
+    }
+    .legenda dl {
+      grid-template-columns: repeat(3, auto);
+      justify-content: start;
+    }
+  }
+</style>

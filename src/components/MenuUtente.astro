@@ -1,0 +1,189 @@
+---
+// Menu utente nella barra in alto: riepilogo dei dati salvati nel browser, modifica e
+// cancellazione. In M2 qui arriveranno anche accesso e profilo.
+import { ICONE } from "../lib/icone";
+---
+
+<div class="menu-utente">
+  <button id="menu-utente-btn" class="icona-btn" type="button" aria-haspopup="true"
+          aria-expanded="false" aria-controls="menu-utente-pannello" aria-label="I tuoi dati">
+    <span set:html={ICONE.utente} />
+    <span id="menu-utente-punto" class="punto" hidden></span>
+  </button>
+
+  <div id="menu-utente-pannello" class="pannello-menu" hidden>
+    <p class="titolo">I tuoi dati</p>
+    <dl id="menu-utente-dati" class="dati-elenco"></dl>
+    <p id="menu-utente-vuoto" class="small muted vuoto" hidden>Non hai ancora inserito i tuoi dati. Servono a calcolare bollo e assicurazione.</p>
+    <div class="voci">
+      <button id="menu-utente-modifica" type="button" class="voce"></button>
+      <button id="menu-utente-cancella" type="button" class="voce voce-pericolo">Cancella i dati</button>
+    </div>
+    <p class="small muted nota">Restano in questo browser. Per stimare la tua assicurazione, data di nascita, classe di merito e via vengono inviate al servizio AI e conservate per riutilizzare la stima.</p>
+  </div>
+</div>
+
+<style>
+  .menu-utente {
+    position: relative;
+  }
+  .icona-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .icona-btn:hover,
+  .icona-btn[aria-expanded="true"] {
+    border-color: var(--inchiostro);
+    background: var(--inchiostro);
+    color: var(--carta);
+  }
+  /* pallino: dati non ancora inseriti */
+  .punto {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+  }
+  .pannello-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 20;
+    width: min(320px, calc(100vw - 2 * var(--gutter)));
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border-color: var(--inchiostro);
+  }
+  .titolo {
+    margin: 0 0 10px;
+    font-weight: 700;
+  }
+  .dati-elenco {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 12px;
+  }
+  .dati-elenco :global(dt) {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dati-elenco :global(dd) {
+    margin: 1px 0 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .vuoto {
+    margin: 0 0 12px;
+  }
+  .voci {
+    display: grid;
+    gap: 2px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  .voce {
+    text-align: left;
+    font: inherit;
+    font-weight: 600;
+    padding: 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--inchiostro);
+    cursor: pointer;
+  }
+  .voce:hover {
+    background: var(--carta-2);
+  }
+  .voce-pericolo {
+    color: var(--neg);
+  }
+  .voce-pericolo:hover {
+    background: var(--neg-soft);
+  }
+  .nota {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+  }
+</style>
+
+<script>
+  import { esc, formatData } from "../lib/formato";
+  import * as ipotesi from "../lib/ipotesi";
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const btn = $<HTMLButtonElement>("menu-utente-btn");
+  const pannello = $("menu-utente-pannello");
+  const elenco = $("menu-utente-dati");
+  const vuoto = $("menu-utente-vuoto");
+  const punto = $("menu-utente-punto");
+  const modifica = $<HTMLButtonElement>("menu-utente-modifica");
+  const cancella = $<HTMLButtonElement>("menu-utente-cancella");
+
+  function aggiorna(i: ipotesi.Ipotesi | null) {
+    const righe: Array<[string, string]> = i
+      ? [
+          ["Dove vivi", i.indirizzo?.etichetta ?? ipotesi.nomeRegione(i.regione) ?? i.regione],
+          ...(i.indirizzo ? [["Regione", ipotesi.nomeRegione(i.regione) ?? i.regione] as [string, string]] : []),
+          ["Data di nascita", i.nascita ? formatData(i.nascita) : "Non indicata"],
+          ["Classe di merito", ipotesi.nomeClasse(i.classe) ?? "Non indicata"],
+        ]
+      : [];
+    elenco.innerHTML = righe.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");
+    elenco.hidden = !i;
+    vuoto.hidden = !!i;
+    cancella.hidden = !i;
+    punto.hidden = !!i;
+    modifica.textContent = i ? "Modifica i dati" : "Inserisci i dati";
+  }
+
+  function apriMenu(aperto: boolean) {
+    pannello.hidden = !aperto;
+    btn.setAttribute("aria-expanded", String(aperto));
+    if (aperto) aggiorna(ipotesi.leggi());
+  }
+
+  btn.addEventListener("click", () => apriMenu(pannello.hidden));
+  document.addEventListener("click", (e) => {
+    if (!pannello.hidden && !(e.target as HTMLElement).closest(".menu-utente")) apriMenu(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !pannello.hidden) {
+      apriMenu(false);
+      btn.focus();
+    }
+  });
+
+  modifica.addEventListener("click", () => {
+    apriMenu(false);
+    ipotesi.apriDati();
+  });
+
+  cancella.addEventListener("click", () => {
+    if (!confirm("Cancellare i tuoi dati da questo browser?")) return;
+    ipotesi.cancella();
+    apriMenu(false);
+    ipotesi.annuncia(null);
+  });
+
+  ipotesi.suCambio(aggiorna);
+  aggiorna(ipotesi.leggi());
+</script>

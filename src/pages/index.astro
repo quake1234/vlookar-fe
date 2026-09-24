@@ -1,0 +1,228 @@
+---
+import Base from "../layouts/Base.astro";
+import { anniImmatricolazione } from "../lib/ipotesi";
+---
+
+<Base title="Vroomy — quanto costa tenere un'auto" legenda={false}>
+  <div class="wrap home">
+    <section class="apertura" aria-labelledby="titolo">
+      <h1 id="titolo">Quanto costa tenerla, un anno intero.</h1>
+      <p class="lead">
+        Scegli l'auto: bollo, assicurazione e tagliandi di un anno, sommati, con l'origine di ogni cifra.
+      </p>
+
+      <form id="scelta" class="scelta" novalidate>
+        <ol class="passi">
+          <li class="passo">
+            <span class="passo-n" aria-hidden="true">1</span>
+            <label for="marca"><span class="etichetta">Marca</span></label>
+            <select id="marca" required disabled>
+              <option value="">Caricamento…</option>
+            </select>
+          </li>
+          <li class="passo">
+            <span class="passo-n" aria-hidden="true">2</span>
+            <label for="modello"><span class="etichetta">Modello</span></label>
+            <select id="modello" required disabled>
+              <option value="">Prima scegli la marca</option>
+            </select>
+          </li>
+          <li class="passo">
+            <span class="passo-n" aria-hidden="true">3</span>
+            <label for="allestimento"><span class="etichetta">Motore e allestimento</span></label>
+            <select id="allestimento" required disabled>
+              <option value="">Prima scegli il modello</option>
+            </select>
+          </li>
+          <li class="passo">
+            <span class="passo-n" aria-hidden="true">4</span>
+            <label for="anno"><span class="etichetta">Anno di immatricolazione</span></label>
+            <select id="anno">
+              <option value="">Auto nuova / non lo so</option>
+              {anniImmatricolazione().map((a) => <option value={a}>{a}</option>)}
+            </select>
+          </li>
+        </ol>
+        <div class="azioni">
+          <button id="vai" class="btn" type="submit" disabled>Calcola i costi</button>
+          <p id="stato" class="stato small muted" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <aside class="origini" aria-labelledby="origini-titolo">
+      <h2 id="origini-titolo">Ogni cifra dice da dove viene</h2>
+      <dl>
+        <div class="origine-voce">
+          <dt><span class="campione" aria-hidden="true"></span>Calcolato</dt>
+          <dd>Il bollo: kW, classe Euro e tariffe della tua regione, le stesse che applica l'ACI.</dd>
+        </div>
+        <div class="origine-voce">
+          <dt><span class="campione campione-ufficiale" aria-hidden="true"></span>Dato ufficiale</dt>
+          <dd>Le bocciature alla revisione britannica per quel motore, confrontate con la media delle auto della stessa età.</dd>
+        </div>
+        <div class="origine-voce">
+          <dt><span class="campione campione-stima" aria-hidden="true"></span>Stima AI</dt>
+          <dd>Prezzo, assicurazione, tagliando e problemi tipici. Indicativi: verificali prima di decidere.</dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</Base>
+
+<style>
+  .home {
+    display: grid;
+    gap: 56px;
+    padding-top: 40px;
+  }
+  h1 {
+    font-size: clamp(2.75rem, 9vw, 6.25rem);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+    max-width: 9.5em;
+  }
+  .lead {
+    font-size: 1.125rem;
+    color: var(--grafite);
+    margin: 20px 0 36px;
+    max-width: 32em;
+  }
+  .passi {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--inchiostro);
+  }
+  .passo {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 6px 12px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--filo);
+  }
+  .passo-n {
+    grid-row: span 2;
+    align-self: start;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--grafite);
+    padding-top: 2px;
+  }
+  .passo label {
+    margin: 0;
+  }
+  .azioni {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .stato {
+    margin: 0;
+    min-height: 1.3em;
+    font-family: var(--mono);
+  }
+  #vai {
+    width: 100%;
+  }
+
+  .origini h2 {
+    font-size: 1.25rem;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--inchiostro);
+  }
+  .origini dl {
+    margin: 0;
+  }
+  .origine-voce {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--filo);
+  }
+  .origine-voce dt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+  }
+  .origine-voce dd {
+    margin: 6px 0 0 34px;
+    color: var(--grafite);
+    font-size: 0.9375rem;
+  }
+  /* stessi campioni della barra del costo annuo */
+  .campione {
+    width: 24px;
+    height: 14px;
+    flex: none;
+    color: var(--inchiostro);
+    background: currentColor;
+  }
+  .campione-ufficiale {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px currentColor;
+  }
+  .campione-stima {
+    background: var(--tratteggio);
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+
+  @media (min-width: 720px) {
+    .passo {
+      grid-template-columns: 40px 200px 1fr;
+    }
+    .passo-n {
+      grid-row: auto;
+      align-self: center;
+      padding: 0;
+    }
+    .azioni {
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 20px;
+    }
+    #vai {
+      width: auto;
+      min-width: 220px;
+    }
+  }
+  @media (min-width: 1000px) {
+    .home {
+      grid-template-columns: 7fr 4fr;
+      gap: 80px;
+      padding-top: 72px;
+      align-items: start;
+    }
+    .origini {
+      margin-top: 12px;
+      position: sticky;
+      top: 88px;
+    }
+  }
+</style>
+
+<script>
+  import { collega } from "../lib/sceltaAuto";
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const vai = $<HTMLButtonElement>("vai");
+  const allestimento = $<HTMLSelectElement>("allestimento");
+  const anno = $<HTMLSelectElement>("anno");
+
+  collega({
+    marca: $("marca"),
+    modello: $("modello"),
+    allestimento,
+    stato: $("stato"),
+    suScelta: (id) => (vai.disabled = id === null),
+  });
+
+  $<HTMLFormElement>("scelta").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!allestimento.value) return;
+    const q = new URLSearchParams({ id: allestimento.value });
+    if (anno.value) q.set("anno", anno.value);
+    location.href = `/scheda?${q}`;
+  });
+</script>
