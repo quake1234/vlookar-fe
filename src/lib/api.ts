@@ -35,6 +35,15 @@ export interface Problema {
   costo_riparazione_testo?: string | null;
 }
 
+/** Intervento di manutenzione oltre il tagliando ordinario, previsto a un certo chilometraggio. */
+export interface Intervento {
+  titolo: string;
+  descrizione: string;
+  entro_km: number | null;
+  costo_officina_autorizzata_eur: Intervallo | null;
+  costo_meccanico_eur: Intervallo | null;
+}
+
 export interface Fonte {
   name: string;
   url: string | null;
@@ -135,6 +144,19 @@ export interface Scheda {
     };
     mancano: string[];
   };
+  // Stima per anno e fascia di km; null se l'utente non ha indicato i km.
+  usura: null | {
+    origine: "stima_llm";
+    km_da: number;
+    fascia_km: string;           // "120.000-129.999 km"
+    anno_immatricolazione: number | null;
+    prezzo_usato_eur: IntervalloConNota | null;
+    interventi: Intervento[];    // ordinati per km previsti dal backend
+    problemi: Problema[];
+    modello_llm: string | null;
+    data: string | null;
+    da_calcolare: boolean;       // non ancora pronta: chiedere /usura
+  };
   stima_non_disponibile: null | "limite" | "errore";
 }
 
@@ -175,6 +197,7 @@ export const indirizzi = (q: string, signal?: AbortSignal) =>
 export interface ParametriScheda {
   regione?: string | null;
   anno?: number | null;
+  km?: number | null;             // inizio della fascia di km
   nascita?: string | null;
   classe?: string | null;
   indirizzo?: Indirizzo | null;
@@ -184,6 +207,7 @@ function query(p: ParametriScheda): string {
   const q = new URLSearchParams();
   if (p.regione) q.set("regione", p.regione);
   if (p.anno) q.set("anno", String(p.anno));
+  if (p.km != null) q.set("km", String(p.km));
   if (p.nascita) q.set("nascita", p.nascita);
   if (p.classe) q.set("classe", p.classe);
   // la via serve solo alla stima personalizzata, che scatta con classe o data di nascita
@@ -206,3 +230,7 @@ export const scheda = (id: number, p: ParametriScheda = {}) =>
 /** Chiede la stima dell'assicurazione per classe e luogo; poi la scheda la contiene. */
 export const assicurazione = (id: number, p: ParametriScheda) =>
   get<{ stato: "pronta" | "limite" | "errore" }>(`/allestimenti/${id}/assicurazione${query(p)}`);
+
+/** Chiede la stima per anno e fascia di km; poi la scheda la contiene. */
+export const usura = (id: number, p: ParametriScheda) =>
+  get<{ stato: "pronta" | "limite" | "errore" }>(`/allestimenti/${id}/usura${query({ anno: p.anno, km: p.km })}`);

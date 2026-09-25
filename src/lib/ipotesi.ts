@@ -1,9 +1,10 @@
 // Dati dell'utente per i costi: regione (bollo), data di nascita e classe di merito
 // (assicurazione) e facoltativamente la via. Si chiedono al primo accesso e si ricordano nel browser.
-// L'anno di immatricolazione non sta qui: riguarda l'auto cercata, e viaggia nell'URL della
-// scheda (?anno=).
+// Anno di immatricolazione e chilometri non stanno qui: riguardano l'auto cercata, e viaggiano
+// nell'URL della scheda (?anno=, ?km=).
 
 import type { Indirizzo } from "./api";
+import { formatIntero as n } from "./formato";
 
 // Chiave = valore passato al backend (tax_rules.region). Trento e Bolzano hanno il bollo
 // provinciale, quindi compaiono separate.
@@ -40,6 +41,23 @@ export function anniImmatricolazione(oggi = new Date().getFullYear()): number[] 
 export function annoDaUrl(search: string): number | null {
   const a = Number(new URLSearchParams(search).get("anno"));
   return anniImmatricolazione().includes(a) ? a : null;
+}
+
+/** Fasce di chilometri proposte nel menu, identificate dal limite inferiore: 0 = 0-9.999,
+ *  10.000 = 10.000-19.999, … fino a 500.000 = 500.000 e oltre. */
+export const FASCE_KM: number[] = Array.from({ length: 51 }, (_, i) => i * 10_000);
+const ULTIMA_FASCIA = FASCE_KM[FASCE_KM.length - 1];
+
+/** Fascia di chilometri dall'URL della scheda; null se assente o fuori dal menu (= non indicata). */
+export function kmDaUrl(search: string): number | null {
+  const v = new URLSearchParams(search).get("km");
+  const k = Number(v);
+  return v && FASCE_KM.includes(k) ? k : null;
+}
+
+/** 20000 → "20.000-29.999 km"; l'ultima fascia → "500.000 km e oltre". */
+export function nomeFasciaKm(da: number): string {
+  return da === ULTIMA_FASCIA ? `${n(da)} km e oltre` : `${n(da)}-${n(da + 9_999)} km`;
 }
 
 export const nomeRegione = (k: string | null | undefined) =>

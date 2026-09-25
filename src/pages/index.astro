@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import { anniImmatricolazione } from "../lib/ipotesi";
+import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
 ---
 
 <Base title="Vroomy — quanto costa tenere un'auto" legenda={false}>
@@ -23,20 +23,28 @@ import { anniImmatricolazione } from "../lib/ipotesi";
           </li>
           <li class="passo">
             <span class="passo-n" aria-hidden="true">2</span>
+            <label for="km"><span class="etichetta">Chilometri</span></label>
+            <select id="km">
+              <option value="">Non li so</option>
+              {FASCE_KM.map((k) => <option value={k}>{nomeFasciaKm(k)}</option>)}
+            </select>
+          </li>
+          <li class="passo">
+            <span class="passo-n" aria-hidden="true">3</span>
             <label for="marca"><span class="etichetta">Marca</span></label>
             <select id="marca" required disabled>
               <option value="">Caricamento…</option>
             </select>
           </li>
           <li class="passo">
-            <span class="passo-n" aria-hidden="true">3</span>
+            <span class="passo-n" aria-hidden="true">4</span>
             <label for="modello"><span class="etichetta">Modello</span></label>
             <select id="modello" required disabled>
               <option value="">Prima scegli la marca</option>
             </select>
           </li>
           <li class="passo">
-            <span class="passo-n" aria-hidden="true">4</span>
+            <span class="passo-n" aria-hidden="true">5</span>
             <label for="allestimento"><span class="etichetta">Motore e allestimento</span></label>
             <select id="allestimento" required disabled>
               <option value="">Prima scegli il modello</option>
@@ -209,6 +217,7 @@ import { anniImmatricolazione } from "../lib/ipotesi";
   const vai = $<HTMLButtonElement>("vai");
   const allestimento = $<HTMLSelectElement>("allestimento");
   const anno = $<HTMLSelectElement>("anno");
+  const km = $<HTMLSelectElement>("km");
 
   collega({
     anno,
@@ -224,6 +233,7 @@ import { anniImmatricolazione } from "../lib/ipotesi";
     if (!allestimento.value) return;
     const q = new URLSearchParams({ id: allestimento.value });
     if (anno.value) q.set("anno", anno.value);
+    if (km.value) q.set("km", km.value);
     location.href = `/scheda?${q}`;
   });
 </script>

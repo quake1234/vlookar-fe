@@ -9,8 +9,21 @@ import Base from "../layouts/Base.astro";
     </nav>
 
     <header class="testata">
-      <h1 id="titolo">Scheda auto</h1>
-      <p id="sottotitolo" class="allestimento"></p>
+      <div class="testata-riga">
+        <div class="testata-nome">
+          <h1 id="titolo">Scheda auto</h1>
+          <p id="sottotitolo" class="allestimento"></p>
+        </div>
+        <section id="mantenimento" class="mantenimento" aria-labelledby="totale-nome" hidden>
+          <h2 id="totale-nome" class="etichetta">Mantenimento annuo</h2>
+          <div id="totale" class="totale" aria-live="polite">
+            <p class="totale-riga"><span class="totale-da">da</span><span id="tot-min" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
+            <p class="totale-riga"><span class="totale-da">a</span><span id="tot-max" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
+          </div>
+          <p id="totale-stato" class="totale-stato" hidden></p>
+          <p class="totale-composizione">Assicurazione + bollo + tagliandi <span class="origine origine-calcolato">Calcolato</span></p>
+        </section>
+      </div>
       <dl id="specifiche" class="specifiche" hidden></dl>
     </header>
 
@@ -70,23 +83,17 @@ import Base from "../layouts/Base.astro";
         </article>
 
       </section>
-
-      <!-- ============================================================ cruscotto -->
-      <aside class="cruscotto" aria-labelledby="totale-nome">
-        <div class="cruscotto-interno">
-          <h2 id="totale-nome" class="etichetta">Mantenimento annuo</h2>
-          <div id="totale" class="totale" aria-live="polite">
-            <p class="totale-riga"><span class="totale-da">da</span><span id="tot-min" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
-            <p class="totale-riga"><span class="totale-da">a</span><span id="tot-max" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
-          </div>
-          <p id="totale-stato" class="totale-stato" hidden></p>
-          <p class="totale-composizione">Assicurazione + bollo + tagliandi <span class="origine origine-calcolato">Calcolato</span></p>
-
-        </div>
-      </aside>
     </div>
 
-    <!-- riepilogo fisso in basso sul telefono, dove il cruscotto non è visibile -->
+    <!-- nome e versione in piccolo, fissi in alto quando la testata esce dallo schermo -->
+    <div id="compatta" class="compatta" aria-hidden="true">
+      <div class="wrap compatta-interno">
+        <span id="compatta-nome" class="compatta-nome"></span>
+        <span id="compatta-versione" class="compatta-versione"></span>
+      </div>
+    </div>
+
+    <!-- riepilogo fisso in basso sul telefono, quando la testata esce dallo schermo -->
     <div id="mini" class="mini" aria-hidden="true" hidden>
       <span class="etichetta">Mantenimento annuo</span>
       <span id="mini-valore" class="mini-valore cifra">—</span>
@@ -117,6 +124,17 @@ import Base from "../layouts/Base.astro";
   }
   .testata:has(+ .profilo:not([hidden])) {
     border-bottom-color: var(--filo);
+  }
+  .testata-riga {
+    display: grid;
+    gap: 24px;
+  }
+  @media (min-width: 760px) {
+    .testata-riga {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 48px;
+    }
   }
   .testata h1 {
     font-size: clamp(2.5rem, 7.5vw, 5.5rem);
@@ -213,40 +231,6 @@ import Base from "../layouts/Base.astro";
     }
   }
 
-  /* ---- calcolatore: conto a sinistra, cruscotto a destra */
-  .calcolatore {
-    display: grid;
-    gap: 0;
-  }
-  .conto {
-    order: 2;
-  }
-  .cruscotto {
-    order: 1;
-    padding: 28px 0;
-    border-bottom: 1px solid var(--inchiostro);
-  }
-  @media (min-width: 1000px) {
-    .calcolatore {
-      grid-template-columns: minmax(0, 62fr) minmax(0, 38fr);
-    }
-    .conto {
-      order: 1;
-      padding-right: 48px;
-      border-right: 1px solid var(--filo);
-    }
-    .cruscotto {
-      order: 2;
-      padding: 0 0 0 40px;
-      border-bottom: 0;
-    }
-    .cruscotto-interno {
-      position: sticky;
-      top: 80px;
-      padding-top: 28px;
-    }
-  }
-
   .voce {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -314,9 +298,12 @@ import Base from "../layouts/Base.astro";
     letter-spacing: -0.02em;
   }
 
-  /* ---- il totale: cifre enormi, una sopra l'altra, allineate a destra come in un registro */
+  /* ---- il totale: due cifre una sopra l'altra, allineate a destra come in un registro */
+  .mantenimento {
+    min-width: 240px;
+  }
   .totale {
-    margin: 14px 0 0;
+    margin: 8px 0 0;
   }
   .totale-riga {
     display: grid;
@@ -331,17 +318,17 @@ import Base from "../layouts/Base.astro";
   .totale-da,
   .totale-euro {
     font-family: var(--mono);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--grafite);
   }
   .totale-euro {
-    padding-left: 8px;
+    padding-left: 6px;
   }
   .totale-num {
-    font-size: clamp(3.75rem, 8vw, 6.5rem);
+    font-size: clamp(2rem, 4vw, 2.75rem);
     font-weight: 700;
-    letter-spacing: -0.05em;
-    line-height: 1.02;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
     text-align: right;
   }
   .totale.in-attesa .totale-num {
@@ -351,18 +338,58 @@ import Base from "../layouts/Base.astro";
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 6px 12px;
-    margin: 12px 0 0;
-    padding-top: 12px;
+    gap: 4px 12px;
+    margin: 8px 0 0;
+    padding-top: 8px;
     border-top: 1px solid var(--inchiostro);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--grafite);
   }
   .totale-stato {
-    margin: 8px 0 0;
-    font-size: 0.875rem;
+    margin: 6px 0 0;
+    font-size: 0.8125rem;
     color: var(--grafite);
   }
+  /* ---- testata compatta: sotto la barra del sito (56px + filetto) */
+  .compatta {
+    position: fixed;
+    top: 57px;
+    left: 0;
+    right: 0;
+    z-index: 9;
+    background: var(--carta);
+    border-bottom: 1px solid var(--inchiostro);
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+  .compatta.visibile {
+    transform: none;
+    visibility: visible;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .compatta {
+      transition: transform var(--durata) ease-out, visibility var(--durata);
+    }
+  }
+  .compatta-interno {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .compatta-nome {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+  }
+  .compatta-versione {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+  }
+
   /* ---- riepilogo fisso sul telefono */
   .mini {
     position: fixed;
@@ -550,7 +577,7 @@ import Base from "../layouts/Base.astro";
 
 <script>
   import * as api from "../lib/api";
-  import type { Intervallo, IntervalloConNota, Scheda } from "../lib/api";
+  import type { Intervallo, IntervalloConNota, Intervento, Problema, Scheda } from "../lib/api";
   import { cifra, svuota } from "../lib/anima";
   import { esc, formatData, formatEuro, formatEuroCent, formatIntervallo, formatIntero, formatNumero, nomeLeggibile } from "../lib/formato";
   import * as ipotesi from "../lib/ipotesi";
@@ -564,14 +591,23 @@ import Base from "../layouts/Base.astro";
   const resto = $("resto");
   const mini = $("mini");
 
+  // Testata compatta: compare quando il nome dell'auto passa sotto la barra del sito.
+  const compatta = $("compatta");
+  let compattaPronta = false;   // i nomi arrivano con la scheda
+  new IntersectionObserver(([e]) => {
+    compatta.classList.toggle("visibile", compattaPronta && !e.isIntersecting && e.boundingClientRect.top < 57);
+  }, { rootMargin: "-57px 0px 0px 0px" }).observe(document.querySelector(".testata-nome")!);
+  const mantenimento = $("mantenimento");
+
   const id = Number(new URLSearchParams(location.search).get("id"));
 
   // ---------------------------------------------------------------- stato
 
   const anno = ipotesi.annoDaUrl(location.search);   // dell'auto cercata, scelto nella home; null = nuova
+  const km = ipotesi.kmDaUrl(location.search);       // dell'auto cercata, fascia scelta nella home; null = non indicata
 
   function parametri(i: ipotesi.Ipotesi | null): api.ParametriScheda {
-    return { regione: i?.regione, anno, nascita: i?.nascita, classe: i?.classe, indirizzo: i?.indirizzo };
+    return { regione: i?.regione, anno, km, nascita: i?.nascita, classe: i?.classe, indirizzo: i?.indirizzo };
   }
 
   /** I dati con cui sono calcolati i costi, in sola lettura. */
@@ -580,6 +616,7 @@ import Base from "../layouts/Base.astro";
     const voci: Array<[string, string]> = [
       ["Dove vivi", i.indirizzo ? `${i.indirizzo.etichetta}, ${regione}` : regione],
       ["Auto", anno ? `Immatricolata nel ${anno}` : "Nuova"],
+      ["Chilometri", km !== null ? ipotesi.nomeFasciaKm(km) : "Non indicati"],
       ["Data di nascita", i.nascita ? formatData(i.nascita) : "Non indicata"],
       ["Classe di merito", ipotesi.nomeClasse(i.classe) ?? "Non indicata"],
     ];
@@ -618,6 +655,21 @@ import Base from "../layouts/Base.astro";
     if (esitoAssicurazione === "limite") return "Troppe richieste nell'ultima ora: la stima su misura arriverà più tardi.";
     if (esitoAssicurazione === "errore") return "La stima su misura non è disponibile ora: riprova più tardi.";
     return "";
+  }
+
+  // ---------------------------------------------------------------- stima per chilometraggio
+
+  // Esito dell'ultima richiesta di stima per anno e km: 'limite' | 'errore' | null.
+  let esitoUsura: string | null = null;
+  const usuraInAttesa = (s: Scheda) => !!s.usura?.da_calcolare && esitoUsura === null;
+  /** La stima per chilometraggio, se è pronta. */
+  const usuraPronta = (s: Scheda) => (s.usura && !s.usura.da_calcolare ? s.usura : null);
+
+  function notaUsura(s: Scheda): string {
+    if (!s.usura?.da_calcolare) return "";
+    if (esitoUsura === "limite") return `Troppe richieste nell'ultima ora: la stima per ${s.usura.fascia_km} arriverà più tardi.`;
+    if (esitoUsura === "errore") return `La stima per ${s.usura.fascia_km} non è disponibile ora: riprova più tardi.`;
+    return `Stiamo stimando prezzo, manutenzione e problemi per ${s.usura.fascia_km}: può volerci fino a un minuto.`;
   }
 
   // ---------------------------------------------------------------- voci di costo e totale
@@ -707,6 +759,7 @@ import Base from "../layouts/Base.astro";
     renderVoci(c);
     renderTotale(c);
     calcolatore.hidden = false;
+    mantenimento.hidden = false;
     mini.hidden = false;
   }
 
@@ -719,6 +772,9 @@ import Base from "../layouts/Base.astro";
     document.title = `${marca} ${modello} ${a.nome} — Vroomy`;
     $("titolo").textContent = `${marca} ${modello}`;
     $("sottotitolo").textContent = a.nome;
+    $("compatta-nome").textContent = `${marca} ${modello}`;
+    $("compatta-versione").textContent = a.nome;
+    compattaPronta = true;
     $("bc-marca").textContent = marca;
     $("bc-modello").textContent = modello;
 
@@ -732,7 +788,10 @@ import Base from "../layouts/Base.astro";
     if (a.in_produzione !== null) spec.push(["Stato", a.in_produzione ? "In vendita" : "Fuori produzione", null]);
     if (s.dati_ufficiali) spec.push(["Motore", esc(s.dati_ufficiali.codice_motore), "ufficiale"]);
     if (st && (a.in_produzione !== false || st.prezzo_nuovo_eur)) spec.push(["Prezzo da nuova", prezzo(st.prezzo_nuovo_eur), "stima_llm"]);
-    if (st) spec.push(["Prezzo usata", prezzo(st.prezzo_usato_eur), "stima_llm"]);
+    const u = usuraPronta(s);
+    if (u) spec.push([`Prezzo usata, ${u.fascia_km}`, prezzo(u.prezzo_usato_eur), "stima_llm"]);
+    else if (usuraInAttesa(s)) spec.push(["Prezzo usata", `<span class="spec-nota">In calcolo per ${esc(s.usura!.fascia_km)}…</span>`, "stima_llm"]);
+    else if (st) spec.push(["Prezzo usata", prezzo(st.prezzo_usato_eur), "stima_llm"]);
     const dl = $("specifiche");
     dl.innerHTML = spec.map(([k, v, o]) => `<div><dt class="etichetta">${esc(k)}</dt><dd>${v}</dd>${o ? origine(o) : ""}</div>`).join("");
     dl.hidden = spec.length === 0;
@@ -745,34 +804,67 @@ import Base from "../layouts/Base.astro";
     </section>`;
   }
 
+  function costiRiparazione(r: { costo_officina_autorizzata_eur?: Intervallo | null; costo_meccanico_eur?: Intervallo | null }): string {
+    return [
+      r.costo_officina_autorizzata_eur ? `<span>Officina autorizzata <strong>${esc(intervallo(r.costo_officina_autorizzata_eur))}</strong></span>` : "",
+      r.costo_meccanico_eur ? `<span>Meccanico di fiducia <strong>${esc(intervallo(r.costo_meccanico_eur))}</strong></span>` : "",
+    ].join("");
+  }
+
+  function listaProblemi(problemi: Problema[]): string {
+    return `<ul class="elenco">${problemi.map((p) => {
+      const costi = costiRiparazione(p) || (p.costo_riparazione_testo
+        ? `<span>Riparazione: <strong>${esc(p.costo_riparazione_testo)}</strong></span>` : "");
+      return `<li>
+        <div class="problema-testa"><strong>${esc(p.titolo)}</strong>${p.gravita ? `<span class="gravita gravita-${esc(p.gravita)}">Gravità ${esc(p.gravita)}</span>` : ""}</div>
+        <p>${esc(p.descrizione)}</p>
+        ${costi ? `<div class="costi-riparazione">${costi}</div>` : ""}
+      </li>`;
+    }).join("")}</ul>`;
+  }
+
+  function listaInterventi(interventi: Intervento[]): string {
+    return `<ul class="elenco">${interventi.map((i) => {
+      const costi = costiRiparazione(i);
+      return `<li>
+        <div class="problema-testa"><strong>${esc(i.titolo)}</strong>${i.entro_km ? `<span class="gravita">A ${esc(formatNumero(i.entro_km))} km</span>` : ""}</div>
+        <p>${esc(i.descrizione)}</p>
+        ${costi ? `<div class="costi-riparazione">${costi}</div>` : ""}
+      </li>`;
+    }).join("")}</ul>`;
+  }
+
   function renderResto(s: Scheda) {
     const st = s.stima;
+    const usu = usuraPronta(s);
     const parti: string[] = [];
+    const attesaUsura = notaUsura(s) ? `<p class="nota-fonte">${esc(notaUsura(s))}</p>` : "";
+    // con i km indicati vale il prezzo dell'usata per quei km, non quello medio
+    const usata = usu ? usu.prezzo_usato_eur : st?.prezzo_usato_eur;
+    const note = [
+      st?.prezzo_nuovo_eur?.nota ? `<li><strong>Da nuova, ${esc(intervallo(st.prezzo_nuovo_eur))}</strong><p>${esc(st.prezzo_nuovo_eur.nota)}</p></li>` : "",
+      usata?.nota ? `<li><strong>Usata${usu ? ` con ${esc(usu.fascia_km)}` : ""}, ${esc(intervallo(usata))}</strong><p>${esc(usata.nota)}</p></li>` : "",
+    ].join("");
+    if (note || attesaUsura) parti.push(blocco("Prezzo", "stima_llm", (note ? `<ul class="elenco">${note}</ul>` : "") + attesaUsura));
+    if (st?.testo) parti.push(blocco("In breve", "stima_llm", `<p>${esc(st.testo)}</p>`));
+
+    if (usu) {
+      parti.push(blocco(`Manutenzione a ${usu.fascia_km}`, "stima_llm", usu.interventi.length
+        ? listaInterventi(usu.interventi) + `<p class="nota-fonte">Interventi oltre il tagliando ordinario: non sono compresi nel mantenimento annuo.</p>`
+        : `<p class="muted">Nessun intervento particolare previsto a questo chilometraggio, oltre al tagliando ordinario.</p>`));
+    }
+
+    // problemi: quelli a quel chilometraggio se ci sono, altrimenti quelli del modello in generale
+    if (usu && usu.problemi.length) {
+      parti.push(blocco(`Problemi tipici a ${usu.fascia_km}`, "stima_llm", listaProblemi(usu.problemi)));
+    } else if (st) {
+      parti.push(blocco("Problemi tipici", "stima_llm", (st.problemi.length
+        ? listaProblemi(st.problemi)
+        : `<p class="muted">Nessun problema tipico segnalato.</p>`)
+        + (usu ? `<p class="nota-fonte">Nessun problema specifico segnalato a ${esc(usu.fascia_km)}: questi sono i problemi del modello in generale.</p>` : "")));
+    }
+
     if (st) {
-      const note = [
-        st.prezzo_nuovo_eur?.nota ? `<li><strong>Da nuova, ${esc(intervallo(st.prezzo_nuovo_eur))}</strong><p>${esc(st.prezzo_nuovo_eur.nota)}</p></li>` : "",
-        st.prezzo_usato_eur?.nota ? `<li><strong>Usata, ${esc(intervallo(st.prezzo_usato_eur))}</strong><p>${esc(st.prezzo_usato_eur.nota)}</p></li>` : "",
-      ].join("");
-      if (note) parti.push(blocco("Prezzo", "stima_llm", `<ul class="elenco">${note}</ul>`));
-      if (st.testo) parti.push(blocco("In breve", "stima_llm", `<p>${esc(st.testo)}</p>`));
-
-      const problemi = st.problemi.length
-        ? `<ul class="elenco">${st.problemi.map((p) => {
-            const costi = [
-              p.costo_officina_autorizzata_eur ? `<span>Officina autorizzata <strong>${esc(intervallo(p.costo_officina_autorizzata_eur))}</strong></span>` : "",
-              p.costo_meccanico_eur ? `<span>Meccanico di fiducia <strong>${esc(intervallo(p.costo_meccanico_eur))}</strong></span>` : "",
-              !p.costo_officina_autorizzata_eur && !p.costo_meccanico_eur && p.costo_riparazione_testo
-                ? `<span>Riparazione: <strong>${esc(p.costo_riparazione_testo)}</strong></span>` : "",
-            ].join("");
-            return `<li>
-              <div class="problema-testa"><strong>${esc(p.titolo)}</strong>${p.gravita ? `<span class="gravita gravita-${esc(p.gravita)}">Gravità ${esc(p.gravita)}</span>` : ""}</div>
-              <p>${esc(p.descrizione)}</p>
-              ${costi ? `<div class="costi-riparazione">${costi}</div>` : ""}
-            </li>`;
-          }).join("")}</ul>`
-        : `<p class="muted">Nessun problema tipico segnalato.</p>`;
-      parti.push(blocco("Problemi tipici", "stima_llm", problemi));
-
       if (st.richiami?.length) {
         parti.push(blocco("Richiami ufficiali", "stima_llm", `
           <ul class="elenco">${st.richiami.map((r) => `<li><strong>${esc(r.descrizione)}</strong>
@@ -803,7 +895,8 @@ import Base from "../layouts/Base.astro";
     }
 
     if (st) {
-      parti.push(`<p class="nota-finale">Stime AI generate da ${esc(st.modello_llm)} il ${esc(formatData(st.data))}. Sono indicative: verificale prima di decidere.</p>`);
+      const perKm = usu?.modello_llm && usu.data ? ` Stima per ${esc(usu.fascia_km)} generata da ${esc(usu.modello_llm)} il ${esc(formatData(usu.data))}.` : "";
+      parti.push(`<p class="nota-finale">Stime AI generate da ${esc(st.modello_llm)} il ${esc(formatData(st.data))}.${perKm} Sono indicative: verificale prima di decidere.</p>`);
     }
     resto.innerHTML = parti.join("");
     resto.hidden = parti.length === 0;
@@ -821,7 +914,12 @@ import Base from "../layouts/Base.astro";
     senzaStima.hidden = false;
   }
 
+  // L'ultima scheda mostrata: assicurazione e stima per km arrivano in parallelo, e chi finisce con
+  // un errore ridisegna questa, non la scheda di partenza (perderebbe ciò che l'altra ha portato).
+  let mostrata: Scheda | null = null;
+
   function render(s: Scheda) {
+    mostrata = s;
     renderTesta(s);
     renderSenzaStima(s);
     renderResto(s);
@@ -851,12 +949,35 @@ import Base from "../layouts/Base.astro";
       }
     }
     esitoAssicurazione = stato;
-    render(s);
+    render(mostrata ?? s);
+  }
+
+  /** Se la scheda aspetta la stima per anno e km, la chiede e poi ricarica la scheda. */
+  async function completaUsura(s: Scheda, p: api.ParametriScheda, turno: number) {
+    if (!s.usura?.da_calcolare) return;
+    let stato: string;
+    try {
+      stato = (await api.usura(id, p)).stato;
+    } catch {
+      stato = "errore";
+    }
+    if (turno !== turnoCarica) return;   // nel frattempo l'utente ha cambiato dati
+    if (stato === "pronta") {
+      try {
+        render(await api.scheda(id, p));
+        return;
+      } catch {
+        stato = "errore";
+      }
+    }
+    esitoUsura = stato;
+    render(mostrata ?? s);
   }
 
   async function carica(i: ipotesi.Ipotesi | null) {
     const turno = ++turnoCarica;
     esitoAssicurazione = null;
+    esitoUsura = null;
     errore.hidden = true;
     attesa.hidden = false;
     const p = parametri(i);
@@ -865,9 +986,11 @@ import Base from "../layouts/Base.astro";
       if (turno !== turnoCarica) return;
       render(s);
       completaAssicurazione(s, p, turno);
+      completaUsura(s, p, turno);
     } catch (e) {
       console.error(e);
       calcolatore.hidden = true;
+      mantenimento.hidden = true;
       mini.hidden = true;
       if (e instanceof api.ErroreApi && e.status === 404) mostraErrore("Quest'auto non è nel nostro catalogo.", true);
       else mostraErrore("Non riusciamo a caricare la scheda. Controlla la connessione e riprova.");
@@ -887,6 +1010,7 @@ import Base from "../layouts/Base.astro";
   function chiediDati() {
     $("profilo").hidden = true;
     calcolatore.hidden = true;
+    mantenimento.hidden = true;
     mini.hidden = true;
     resto.hidden = true;
     errore.hidden = true;
