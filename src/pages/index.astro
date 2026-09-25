@@ -15,31 +15,31 @@ import { anniImmatricolazione } from "../lib/ipotesi";
         <ol class="passi">
           <li class="passo">
             <span class="passo-n" aria-hidden="true">1</span>
+            <label for="anno"><span class="etichetta">Anno di immatricolazione</span></label>
+            <select id="anno">
+              <option value="">Auto nuova / non lo so</option>
+              {anniImmatricolazione().map((a) => <option value={a}>{a}</option>)}
+            </select>
+          </li>
+          <li class="passo">
+            <span class="passo-n" aria-hidden="true">2</span>
             <label for="marca"><span class="etichetta">Marca</span></label>
             <select id="marca" required disabled>
               <option value="">Caricamento…</option>
             </select>
           </li>
           <li class="passo">
-            <span class="passo-n" aria-hidden="true">2</span>
+            <span class="passo-n" aria-hidden="true">3</span>
             <label for="modello"><span class="etichetta">Modello</span></label>
             <select id="modello" required disabled>
               <option value="">Prima scegli la marca</option>
             </select>
           </li>
           <li class="passo">
-            <span class="passo-n" aria-hidden="true">3</span>
+            <span class="passo-n" aria-hidden="true">4</span>
             <label for="allestimento"><span class="etichetta">Motore e allestimento</span></label>
             <select id="allestimento" required disabled>
               <option value="">Prima scegli il modello</option>
-            </select>
-          </li>
-          <li class="passo">
-            <span class="passo-n" aria-hidden="true">4</span>
-            <label for="anno"><span class="etichetta">Anno di immatricolazione</span></label>
-            <select id="anno">
-              <option value="">Auto nuova / non lo so</option>
-              {anniImmatricolazione().map((a) => <option value={a}>{a}</option>)}
             </select>
           </li>
         </ol>
@@ -211,6 +211,7 @@ import { anniImmatricolazione } from "../lib/ipotesi";
   const anno = $<HTMLSelectElement>("anno");
 
   collega({
+    anno,
     marca: $("marca"),
     modello: $("modello"),
     allestimento,

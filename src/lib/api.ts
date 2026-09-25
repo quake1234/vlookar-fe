@@ -150,9 +150,13 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export const marche = () => get<VoceCatalogo[]>("/marche");
-export const modelli = (marcaId: number) => get<VoceCatalogo[]>(`/marche/${marcaId}/modelli`);
-export const allestimenti = (modelloId: number) => get<Allestimento[]>(`/modelli/${modelloId}/allestimenti`);
+// anno: anno di immatricolazione. Con l'anno il backend dà solo ciò che era in listino quell'anno.
+const perAnno = (anno?: number | null) => (anno ? `?anno=${anno}` : "");
+export const marche = (anno?: number | null) => get<VoceCatalogo[]>(`/marche${perAnno(anno)}`);
+export const modelli = (marcaId: number, anno?: number | null) =>
+  get<VoceCatalogo[]>(`/marche/${marcaId}/modelli${perAnno(anno)}`);
+export const allestimenti = (modelloId: number, anno?: number | null) =>
+  get<Allestimento[]>(`/modelli/${modelloId}/allestimenti${perAnno(anno)}`);
 
 /** Una via suggerita dal geocoder (dati OpenStreetMap). regione è la chiave per il bollo. */
 export interface Indirizzo {
