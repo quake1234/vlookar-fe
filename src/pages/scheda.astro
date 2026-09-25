@@ -53,7 +53,7 @@ import Base from "../layouts/Base.astro";
 
         <article class="voce" aria-labelledby="bollo-nome">
           <div class="voce-testa">
-            <h3 id="bollo-nome" class="etichetta">Bollo</h3>
+            <h3 id="bollo-nome" class="etichetta">Bollo<span id="bollo-asterisco" class="asterisco" hidden>*</span></h3>
             <span class="origine origine-calcolato">Calcolato</span>
           </div>
           <p class="voce-importo cifra" id="bollo-importo">—</p>
@@ -272,6 +272,13 @@ import Base from "../layouts/Base.astro";
   }
   .voce-nota :global(a) {
     color: var(--grafite);
+  }
+  .voce-nota :global(.eccezione) {
+    display: block;
+    margin-top: 6px;
+  }
+  .asterisco {
+    margin-left: 2px;
   }
 
   .per-chi {
@@ -685,8 +692,14 @@ import Base from "../layouts/Base.astro";
     if (b.importo !== null && b.superbollo) righe.push(`di cui superbollo ${esc(formatEuroCent(b.superbollo))}`);
     const testo = righe.length ? esc(frase(righe.join(", "))) + " " : "";
     const note = b.note.map((n) => esc(frase(n))).join(" ");
-    const fonti = (b.fonti ?? []).map((f) => `Fonte: ${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>` : esc(f.name)}.`).join(" ");
-    return [testo, note, fonti].filter(Boolean).join(" ");
+    const fonte = (f: { name: string; url?: string | null }) =>
+      `Fonte: ${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>` : esc(f.name)}.`;
+    const fonti = (b.fonti ?? []).map(fonte).join(" ");
+    // Eccezioni non calcolate: una riga ciascuna, con l'asterisco che richiama quello sul titolo.
+    const eccezioni = (b.eccezioni ?? [])
+      .map((e) => `<span class="eccezione">* ${esc(frase(e.testo))}${e.fonte ? " " + fonte(e.fonte) : ""}</span>`)
+      .join("");
+    return [testo, note, fonti].filter(Boolean).join(" ") + eccezioni;
   }
 
   function noteTagliando(c: Scheda): string {
@@ -715,6 +728,7 @@ import Base from "../layouts/Base.astro";
     if (c.bollo.importo !== null) b.textContent = formatEuroCent(c.bollo.importo);
     else b.innerHTML = `<small>Non calcolabile</small>`;
     $("bollo-nota").innerHTML = dettaglioBollo(c.bollo);
+    $("bollo-asterisco").hidden = !c.bollo.eccezioni?.length;
 
     const ass = c.assicurazione;
     if (inAttesa(c)) $("ass-importo").innerHTML = `<small>In calcolo…</small>`;

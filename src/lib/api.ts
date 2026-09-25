@@ -90,6 +90,9 @@ export interface Scheda {
     };
     fonti?: Fonte[];
     note: string[];
+    // Eccezioni che il calcolo non considera (anno di immatricolazione, CO2), già filtrate per
+    // regione e alimentazione dal backend: il sito le mostra con un asterisco.
+    eccezioni?: Array<{ testo: string; fonte: Fonte | null }>;
   };
   dati_ufficiali: null | {
     origine: "ufficiale";
