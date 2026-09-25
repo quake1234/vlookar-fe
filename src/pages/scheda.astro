@@ -258,6 +258,11 @@ import Base from "../layouts/Base.astro";
     text-align: right;
     white-space: nowrap;
   }
+  .voce-importo :global(.importo-pieno) {
+    display: block;
+    margin-top: 2px;
+    white-space: normal;
+  }
   .voce-importo :global(small) {
     font-family: var(--mono);
     font-size: 0.75rem;
@@ -725,8 +730,11 @@ import Base from "../layouts/Base.astro";
 
   function renderVoci(c: Scheda) {
     const b = $("bollo-importo");
-    if (c.bollo.importo !== null) b.textContent = formatEuroCent(c.bollo.importo);
-    else b.innerHTML = `<small>Non calcolabile</small>`;
+    if (c.bollo.importo === null) b.innerHTML = `<small>Non calcolabile</small>`;
+    else if (c.bollo.importo_pieno != null)
+      // con esenzioni o riduzioni: sotto, l'importo pieno calcolato dal backend
+      b.innerHTML = `${esc(formatEuroCent(c.bollo.importo))}<small class="importo-pieno">senza esenzioni né riduzioni ${esc(formatEuroCent(c.bollo.importo_pieno))}</small>`;
+    else b.textContent = formatEuroCent(c.bollo.importo);
     $("bollo-nota").innerHTML = dettaglioBollo(c.bollo);
     $("bollo-asterisco").hidden = !c.bollo.eccezioni?.length;
 

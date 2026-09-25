@@ -78,6 +78,8 @@ export interface Scheda {
   bollo: {
     origine: "calcolato";
     importo: number | null;
+    // senza esenzioni né riduzioni per età e alimentazione; null se uguale a importo
+    importo_pieno?: number | null;
     bollo?: number | null;
     superbollo?: number | null;
     regione_applicata?: string | null;
