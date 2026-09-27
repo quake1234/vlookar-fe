@@ -162,7 +162,7 @@ export interface Scheda {
     data: string | null;
     da_calcolare: boolean;       // non ancora pronta: chiedere /usura
   };
-  stima_non_disponibile: null | "limite" | "errore";
+  stima_da_calcolare: boolean;   // la stima generale non è ancora pronta: chiedere /stima
 }
 
 export class ErroreApi extends Error {
@@ -232,10 +232,15 @@ function query(p: ParametriScheda): string {
 export const scheda = (id: number, p: ParametriScheda = {}) =>
   get<Scheda>(`/allestimenti/${id}/scheda${query(p)}`);
 
+export type StatoStima = { stato: "pronta" | "limite" | "errore" };
+
+/** Chiede la stima generale dell'allestimento; poi la scheda la contiene. */
+export const stima = (id: number) => get<StatoStima>(`/allestimenti/${id}/stima`);
+
 /** Chiede la stima dell'assicurazione per classe e luogo; poi la scheda la contiene. */
 export const assicurazione = (id: number, p: ParametriScheda) =>
-  get<{ stato: "pronta" | "limite" | "errore" }>(`/allestimenti/${id}/assicurazione${query(p)}`);
+  get<StatoStima>(`/allestimenti/${id}/assicurazione${query(p)}`);
 
 /** Chiede la stima per anno e fascia di km; poi la scheda la contiene. */
 export const usura = (id: number, p: ParametriScheda) =>
-  get<{ stato: "pronta" | "limite" | "errore" }>(`/allestimenti/${id}/usura${query({ anno: p.anno, km: p.km })}`);
+  get<StatoStima>(`/allestimenti/${id}/usura${query({ anno: p.anno, km: p.km })}`);

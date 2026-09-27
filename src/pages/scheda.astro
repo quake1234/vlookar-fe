@@ -40,7 +40,7 @@ import Base from "../layouts/Base.astro";
 
     <div id="attesa" class="attesa" role="status" aria-live="polite" hidden>
       <span class="attesa-barra" aria-hidden="true"></span>
-      <p><strong>Stiamo preparando la scheda.</strong> La prima volta che qualcuno cerca quest'auto può volerci fino a un minuto; poi è immediata.</p>
+      <p><strong>Stiamo stimando prezzo, assicurazione, tagliando e problemi tipici.</strong> La prima volta che qualcuno cerca quest'auto può volerci fino a un minuto; intanto qui sotto trovi i dati già pronti.</p>
     </div>
 
     <div id="errore" class="avviso avviso-azione" role="alert" hidden></div>
@@ -651,6 +651,14 @@ import Base from "../layouts/Base.astro";
     return (voci.length > 1 ? "Mancano " : "Manca ") + testo;
   }
 
+  // ---------------------------------------------------------------- stima generale
+
+  // Esito dell'ultima richiesta della stima generale: 'limite' | 'errore' | null. Finché manca,
+  // la scheda mostra ciò che è già pronto (bollo, dati ufficiali) e "In calcolo…" sul resto.
+  let esitoStima: string | null = null;
+  const stimaInAttesa = (s: Scheda) => s.stima_da_calcolare && esitoStima === null;
+  const IN_CALCOLO = `<small>In calcolo…</small>`;
+
   // ---------------------------------------------------------------- assicurazione personalizzata
 
   // Esito dell'ultima richiesta di stima personalizzata: 'limite' | 'errore' | null.
@@ -730,16 +738,19 @@ import Base from "../layouts/Base.astro";
 
   function renderVoci(c: Scheda) {
     const b = $("bollo-importo");
-    if (c.bollo.importo === null) b.innerHTML = `<small>Non calcolabile</small>`;
+    // senza potenza ufficiale il bollo aspetta i kW della stima
+    const bolloInAttesa = c.bollo.importo === null && stimaInAttesa(c);
+    if (bolloInAttesa) b.innerHTML = IN_CALCOLO;
+    else if (c.bollo.importo === null) b.innerHTML = `<small>Non calcolabile</small>`;
     else if (c.bollo.importo_pieno != null)
       // con esenzioni o riduzioni: sotto, l'importo pieno calcolato dal backend
       b.innerHTML = `${esc(formatEuroCent(c.bollo.importo))}<small class="importo-pieno">senza esenzioni né riduzioni ${esc(formatEuroCent(c.bollo.importo_pieno))}</small>`;
     else b.textContent = formatEuroCent(c.bollo.importo);
-    $("bollo-nota").innerHTML = dettaglioBollo(c.bollo);
+    $("bollo-nota").innerHTML = bolloInAttesa ? "Aspettiamo la potenza del motore dalla stima." : dettaglioBollo(c.bollo);
     $("bollo-asterisco").hidden = !c.bollo.eccezioni?.length;
 
     const ass = c.assicurazione;
-    if (inAttesa(c)) $("ass-importo").innerHTML = `<small>In calcolo…</small>`;
+    if (inAttesa(c) || (!ass && stimaInAttesa(c))) $("ass-importo").innerHTML = IN_CALCOLO;
     else importo($("ass-importo"), ass && ass.min !== null && ass.max !== null ? { min: ass.min, max: ass.max } : null);
     $("ass-per-chi").textContent = ass
       ? (inAttesa(c) ? "Stiamo stimando il premio con la tua età, la tua classe e la tua via: può volerci fino a un minuto." : perChi(ass))
@@ -749,8 +760,12 @@ import Base from "../layouts/Base.astro";
          ...ass.note.map(frase), notaEsitoAssicurazione(), ass.nota ?? ""].filter(Boolean).join(" ")
       : "";
 
-    $("tag-aut").textContent = intervallo(c.tagliando?.officina_autorizzata) ?? "Non disponibile";
-    $("tag-mec").textContent = intervallo(c.tagliando?.meccanico) ?? "Non disponibile";
+    const tagliando = (el: HTMLElement, r: Intervallo | null | undefined) => {
+      if (!c.tagliando && stimaInAttesa(c)) el.innerHTML = IN_CALCOLO;
+      else el.textContent = intervallo(r) ?? "Non disponibile";
+    };
+    tagliando($("tag-aut"), c.tagliando?.officina_autorizzata);
+    tagliando($("tag-mec"), c.tagliando?.meccanico);
     $("tag-nota").textContent = noteTagliando(c);
   }
 
@@ -760,13 +775,17 @@ import Base from "../layouts/Base.astro";
     const stato = $("totale-stato");
     const min = $("tot-min");
     const max = $("tot-max");
-    totale.classList.toggle("in-attesa", inAttesa(c));
+    const manca = m.min === null || m.max === null;
+    const aspetta = inAttesa(c) || (manca && stimaInAttesa(c));
+    totale.classList.toggle("in-attesa", aspetta);
 
     if (inAttesa(c) || m.min === null || m.max === null) {
       svuota(min, "—");
       svuota(max, "—");
       $("mini-valore").textContent = "—";
-      stato.textContent = inAttesa(c) ? "Stiamo stimando la tua assicurazione." : elencoMancanti(m.mancano) + ": totale non calcolabile.";
+      stato.textContent = inAttesa(c) ? "Stiamo stimando la tua assicurazione."
+        : aspetta ? "Stiamo stimando assicurazione e tagliando."
+        : elencoMancanti(m.mancano) + ": totale non calcolabile.";
       stato.hidden = false;
       return;
     }
@@ -809,11 +828,14 @@ import Base from "../layouts/Base.astro";
     if (a.alimentazione) spec.push(["Alimentazione", esc(a.alimentazione), null]);
     if (a.in_produzione !== null) spec.push(["Stato", a.in_produzione ? "In vendita" : "Fuori produzione", null]);
     if (s.dati_ufficiali) spec.push(["Motore", esc(s.dati_ufficiali.codice_motore), "ufficiale"]);
+    const inCalcolo = `<span class="spec-nota">In calcolo…</span>`;
     if (st && (a.in_produzione !== false || st.prezzo_nuovo_eur)) spec.push(["Prezzo da nuova", prezzo(st.prezzo_nuovo_eur), "stima_llm"]);
+    else if (stimaInAttesa(s) && a.in_produzione !== false) spec.push(["Prezzo da nuova", inCalcolo, "stima_llm"]);
     const u = usuraPronta(s);
     if (u) spec.push([`Prezzo usata, ${u.fascia_km}`, prezzo(u.prezzo_usato_eur), "stima_llm"]);
     else if (usuraInAttesa(s)) spec.push(["Prezzo usata", `<span class="spec-nota">In calcolo per ${esc(s.usura!.fascia_km)}…</span>`, "stima_llm"]);
     else if (st) spec.push(["Prezzo usata", prezzo(st.prezzo_usato_eur), "stima_llm"]);
+    else if (stimaInAttesa(s)) spec.push(["Prezzo usata", inCalcolo, "stima_llm"]);
     const dl = $("specifiche");
     dl.innerHTML = spec.map(([k, v, o]) => `<div><dt class="etichetta">${esc(k)}</dt><dd>${v}</dd>${o ? origine(o) : ""}</div>`).join("");
     dl.hidden = spec.length === 0;
@@ -925,11 +947,12 @@ import Base from "../layouts/Base.astro";
   }
 
   function renderSenzaStima(s: Scheda) {
-    if (s.stima) {
+    attesa.hidden = !stimaInAttesa(s);
+    if (s.stima || !s.stima_da_calcolare || esitoStima === null) {
       senzaStima.hidden = true;
       return;
     }
-    senzaStima.innerHTML = `<p>${esc(s.stima_non_disponibile === "limite"
+    senzaStima.innerHTML = `<p>${esc(esitoStima === "limite"
       ? "Abbiamo ricevuto troppe richieste nell'ultima ora. Riprova più tardi per vedere prezzo, assicurazione, tagliando e problemi tipici."
       : "Il servizio di stima non risponde in questo momento. Riprova tra poco per vedere prezzo, assicurazione, tagliando e problemi tipici.")}</p>
       <button type="button" class="btn" data-riprova>Riprova</button>`;
@@ -952,72 +975,69 @@ import Base from "../layouts/Base.astro";
 
   let turnoCarica = 0;
 
-  /** Se la scheda aspetta la stima personalizzata, la chiede e poi ricarica la scheda. */
-  async function completaAssicurazione(s: Scheda, p: api.ParametriScheda, turno: number) {
-    if (!s.assicurazione?.da_calcolare) return;
-    let stato: string;
+  // Stima generale, assicurazione e stima per km arrivano in parallelo, e ognuna ricarica la
+  // scheda. Una richiesta partita dopo vede tutto ciò che hanno visto quelle partite prima: si
+  // mostra solo la più recente, così una risposta lenta non ridisegna uno stato vecchio.
+  let richiesta = 0;
+  let mostrataRichiesta = 0;
+
+  async function ricarica(p: api.ParametriScheda, turno: number): Promise<boolean> {
+    const n = ++richiesta;
     try {
-      stato = (await api.assicurazione(id, p)).stato;
-    } catch {
-      stato = "errore";
-    }
-    if (turno !== turnoCarica) return;   // nel frattempo l'utente ha cambiato dati
-    if (stato === "pronta") {
-      try {
-        render(await api.scheda(id, p));
-        return;
-      } catch {
-        stato = "errore";
+      const s = await api.scheda(id, p);
+      if (turno === turnoCarica && n > mostrataRichiesta) {
+        mostrataRichiesta = n;
+        render(s);
       }
+      return true;
+    } catch {
+      return false;
     }
-    esitoAssicurazione = stato;
-    render(mostrata ?? s);
   }
 
-  /** Se la scheda aspetta la stima per anno e km, la chiede e poi ricarica la scheda. */
-  async function completaUsura(s: Scheda, p: api.ParametriScheda, turno: number) {
-    if (!s.usura?.da_calcolare) return;
+  /** Se la scheda aspetta una stima (serve), la chiede e poi ricarica la scheda. Con limite o
+   *  errore annota l'esito e ridisegna l'ultima scheda mostrata. */
+  async function completa(serve: boolean, chiedi: () => Promise<api.StatoStima>,
+                          annota: (esito: string) => void, s: Scheda, p: api.ParametriScheda, turno: number) {
+    if (!serve) return;
     let stato: string;
     try {
-      stato = (await api.usura(id, p)).stato;
+      stato = (await chiedi()).stato;
     } catch {
       stato = "errore";
     }
     if (turno !== turnoCarica) return;   // nel frattempo l'utente ha cambiato dati
-    if (stato === "pronta") {
-      try {
-        render(await api.scheda(id, p));
-        return;
-      } catch {
-        stato = "errore";
-      }
-    }
-    esitoUsura = stato;
+    if (stato === "pronta" && await ricarica(p, turno)) return;
+    if (turno !== turnoCarica) return;
+    annota(stato === "pronta" ? "errore" : stato);
     render(mostrata ?? s);
   }
 
   async function carica(i: ipotesi.Ipotesi | null) {
     const turno = ++turnoCarica;
+    esitoStima = null;
     esitoAssicurazione = null;
     esitoUsura = null;
     errore.hidden = true;
-    attesa.hidden = false;
     const p = parametri(i);
+    const n = ++richiesta;
     try {
-      const s = await api.scheda(id, p);
+      const s = await api.scheda(id, p);   // solo cache: risponde subito
       if (turno !== turnoCarica) return;
+      mostrataRichiesta = n;
       render(s);
-      completaAssicurazione(s, p, turno);
-      completaUsura(s, p, turno);
+      completa(s.stima_da_calcolare, () => api.stima(id), (e) => (esitoStima = e), s, p, turno);
+      completa(!!s.assicurazione?.da_calcolare, () => api.assicurazione(id, p), (e) => (esitoAssicurazione = e), s, p, turno);
+      completa(!!s.usura?.da_calcolare, () => api.usura(id, p), (e) => (esitoUsura = e), s, p, turno);
     } catch (e) {
+      if (turno !== turnoCarica) return;
       console.error(e);
+      attesa.hidden = true;
       calcolatore.hidden = true;
       mantenimento.hidden = true;
       mini.hidden = true;
       if (e instanceof api.ErroreApi && e.status === 404) mostraErrore("Quest'auto non è nel nostro catalogo.", true);
       else mostraErrore("Non riusciamo a caricare la scheda. Controlla la connessione e riprova.");
-    } finally {
-      if (turno === turnoCarica) attesa.hidden = true;
     }
   }
 
@@ -1036,6 +1056,8 @@ import Base from "../layouts/Base.astro";
     mini.hidden = true;
     resto.hidden = true;
     errore.hidden = true;
+    attesa.hidden = true;
+    senzaStima.hidden = true;
     servonoDati.hidden = false;
     ipotesi.apriDati();
   }
@@ -1069,7 +1091,7 @@ import Base from "../layouts/Base.astro";
     } else {
       chiediDati();
       // Nel frattempo si prepara la stima: la risposta finisce in cache e arriverà subito.
-      api.scheda(id).catch(() => {});
+      api.stima(id).catch(() => {});
     }
   }
 </script>
