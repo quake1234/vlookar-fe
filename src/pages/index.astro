@@ -6,7 +6,7 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
 <Base title="Vroomy — quanto costa tenere un'auto" legenda={false}>
   <div class="wrap home">
     <section class="apertura" aria-labelledby="titolo">
-      <h1 id="titolo">Quanto costa tenerla, un anno intero.</h1>
+      <h1 id="titolo">Guida la tua scelta.</h1>
       <p class="lead">
         Scegli l'auto: bollo, assicurazione e tagliandi di un anno, sommati, con l'origine di ogni cifra.
       </p>
@@ -79,22 +79,28 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
 </Base>
 
 <style>
+  /* La home sta tutta nello schermo, senza scorrere: le misure verticali
+     scalano con l'altezza della finestra (vh), non solo con la larghezza. */
+  :global(body main:has(> .home)) {
+    padding-bottom: 0;
+  }
   .home {
     display: grid;
-    gap: 56px;
-    padding-top: 40px;
+    gap: clamp(12px, 3vh, 40px);
+    padding-top: clamp(12px, 3vh, 40px);
+    padding-bottom: clamp(12px, 3vh, 40px);
   }
   h1 {
-    font-size: clamp(2.75rem, 9vw, 6.25rem);
+    font-size: min(clamp(2rem, 9vw, 6.25rem), 10.5vh);
     font-weight: 700;
     letter-spacing: -0.045em;
     line-height: 0.95;
     max-width: 9.5em;
   }
   .lead {
-    font-size: 1.125rem;
+    font-size: 1rem;
     color: var(--grafite);
-    margin: 20px 0 36px;
+    margin: clamp(8px, 1.8vh, 20px) 0 clamp(12px, 3vh, 36px);
     max-width: 32em;
   }
   .passi {
@@ -103,58 +109,72 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     padding: 0;
     border-top: 1px solid var(--inchiostro);
   }
+  /* Sul telefono l'etichetta sta dentro il riquadro del menu, in alto:
+     una riga per passo invece di due. */
   .passo {
+    position: relative;
     display: grid;
-    grid-template-columns: 32px 1fr;
-    gap: 6px 12px;
+    grid-template-columns: 24px 1fr;
+    gap: 0 8px;
     align-items: center;
-    padding: 14px 0;
+    padding: clamp(3px, 0.8vh, 14px) 0;
     border-bottom: 1px solid var(--filo);
   }
   .passo-n {
-    grid-row: span 2;
-    align-self: start;
     font-family: var(--mono);
     font-size: 0.8125rem;
     color: var(--grafite);
-    padding-top: 2px;
   }
   .passo label {
+    position: absolute;
+    top: calc(clamp(3px, 0.8vh, 14px) + 5px);
+    left: calc(24px + 8px + 13px);
     margin: 0;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .passo label .etichetta {
+    font-size: 0.625rem;
+  }
+  .passo select {
+    padding: 17px 12px 3px;
+    min-height: 44px;
   }
   .azioni {
-    display: grid;
-    gap: 10px;
-    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: clamp(10px, 2.2vh, 24px);
   }
   .stato {
     margin: 0;
-    min-height: 1.3em;
     font-family: var(--mono);
   }
   #vai {
-    width: 100%;
+    flex: none;
+    min-width: 180px;
   }
-
   .origini h2 {
-    font-size: 1.25rem;
-    padding-bottom: 14px;
+    font-size: 1rem;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--inchiostro);
   }
+  /* Sotto il modulo, la legenda si riduce ai tre campioni in fila. */
   .origini dl {
-    margin: 0;
-  }
-  .origine-voce {
-    padding: 16px 0;
-    border-bottom: 1px solid var(--filo);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin: 8px 0 0;
   }
   .origine-voce dt {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-weight: 700;
+    font-size: 0.875rem;
   }
   .origine-voce dd {
+    display: none;
     margin: 6px 0 0 34px;
     color: var(--grafite);
     font-size: 0.9375rem;
@@ -175,23 +195,44 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     background: var(--tratteggio);
     box-shadow: inset 0 0 0 1px currentColor;
   }
-
+  /* Schermo basso senza colonna laterale: il sottotitolo lascia spazio al modulo. */
+  @media (max-width: 999px) and (max-height: 680px) {
+    .lead {
+      display: none;
+    }
+    h1 {
+      margin-bottom: 12px;
+    }
+  }
+  /* Schermo bassissimo (telefoni piccoli): resta la fila dei campioni, senza titolo. */
+  @media (max-width: 999px) and (max-height: 560px) {
+    .origini h2 {
+      display: none;
+    }
+    .passo select {
+      min-height: 40px;
+      padding-top: 15px;
+    }
+  }
   @media (min-width: 720px) {
+    .lead {
+      font-size: 1.125rem;
+    }
     .passo {
       grid-template-columns: 40px 200px 1fr;
+      gap: 12px;
     }
-    .passo-n {
-      grid-row: auto;
-      align-self: center;
-      padding: 0;
+    .passo label {
+      position: static;
     }
-    .azioni {
-      grid-template-columns: auto 1fr;
-      align-items: center;
-      gap: 20px;
+    .passo label .etichetta {
+      font-size: 0.6875rem;
+    }
+    .passo select {
+      padding: 0 12px;
+      min-height: clamp(38px, 5.5vh, 46px);
     }
     #vai {
-      width: auto;
       min-width: 220px;
     }
   }
@@ -199,13 +240,30 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     .home {
       grid-template-columns: 7fr 4fr;
       gap: 80px;
-      padding-top: 72px;
+      padding-top: clamp(16px, 6vh, 72px);
       align-items: start;
     }
     .origini {
       margin-top: 12px;
-      position: sticky;
-      top: 88px;
+    }
+    .origini h2 {
+      font-size: 1.25rem;
+      padding-bottom: 14px;
+    }
+    .origini dl {
+      display: block;
+      margin: 0;
+    }
+    .origine-voce {
+      padding: clamp(8px, 2vh, 16px) 0;
+      border-bottom: 1px solid var(--filo);
+    }
+    .origine-voce dt {
+      gap: 10px;
+      font-size: 1rem;
+    }
+    .origine-voce dd {
+      display: block;
     }
   }
 </style>

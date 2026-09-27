@@ -177,6 +177,19 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// I dati personali (data di nascita, classe di merito, indirizzo) vanno nel corpo di una POST,
+// mai nell'URL: gli URL finiscono nei log del server e della piattaforma che lo ospita.
+async function post<T>(path: string, corpo: object, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(API_URL + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corpo),
+    signal,
+  });
+  if (!res.ok) throw new ErroreApi(res.status);
+  return res.json() as Promise<T>;
+}
+
 // anno: anno di immatricolazione. Con l'anno il backend dà solo ciò che era in listino quell'anno.
 const perAnno = (anno?: number | null) => (anno ? `?anno=${anno}` : "");
 export const marche = (anno?: number | null) => get<VoceCatalogo[]>(`/marche${perAnno(anno)}`);
@@ -196,7 +209,7 @@ export interface Indirizzo {
 }
 
 export const indirizzi = (q: string, signal?: AbortSignal) =>
-  get<Indirizzo[]>(`/indirizzi?q=${encodeURIComponent(q)}`, signal);
+  post<Indirizzo[]>("/indirizzi", { q }, signal);
 
 /** Ciò che la scheda chiede all'utente. La via serve solo alla stima dell'assicurazione. */
 export interface ParametriScheda {
@@ -208,29 +221,28 @@ export interface ParametriScheda {
   indirizzo?: Indirizzo | null;
 }
 
-function query(p: ParametriScheda): string {
-  const q = new URLSearchParams();
-  if (p.regione) q.set("regione", p.regione);
-  if (p.anno) q.set("anno", String(p.anno));
-  if (p.km != null) q.set("km", String(p.km));
-  if (p.nascita) q.set("nascita", p.nascita);
-  if (p.classe) q.set("classe", p.classe);
+function corpo(p: ParametriScheda): Record<string, string | number> {
+  const c: Record<string, string | number> = {};
+  if (p.regione) c.regione = p.regione;
+  if (p.anno) c.anno = p.anno;
+  if (p.km != null) c.km = p.km;
+  if (p.nascita) c.nascita = p.nascita;
+  if (p.classe) c.classe = p.classe;
   // la via serve solo alla stima personalizzata, che scatta con classe o data di nascita
   if (p.classe || p.nascita) {
     const i = p.indirizzo;
     if (i) {
-      q.set("via", i.via);
-      if (i.cap) q.set("cap", i.cap);
-      if (i.comune) q.set("comune", i.comune);
-      if (i.provincia) q.set("provincia", i.provincia);
+      c.via = i.via;
+      if (i.cap) c.cap = i.cap;
+      if (i.comune) c.comune = i.comune;
+      if (i.provincia) c.provincia = i.provincia;
     }
   }
-  const qs = q.toString();
-  return qs ? "?" + qs : "";
+  return c;
 }
 
 export const scheda = (id: number, p: ParametriScheda = {}) =>
-  get<Scheda>(`/allestimenti/${id}/scheda${query(p)}`);
+  post<Scheda>(`/allestimenti/${id}/scheda`, corpo(p));
 
 export type StatoStima = { stato: "pronta" | "limite" | "errore" };
 
@@ -239,8 +251,10 @@ export const stima = (id: number) => get<StatoStima>(`/allestimenti/${id}/stima`
 
 /** Chiede la stima dell'assicurazione per classe e luogo; poi la scheda la contiene. */
 export const assicurazione = (id: number, p: ParametriScheda) =>
-  get<StatoStima>(`/allestimenti/${id}/assicurazione${query(p)}`);
+  post<StatoStima>(`/allestimenti/${id}/assicurazione`, corpo(p));
 
 /** Chiede la stima per anno e fascia di km; poi la scheda la contiene. */
 export const usura = (id: number, p: ParametriScheda) =>
-  get<StatoStima>(`/allestimenti/${id}/usura${query({ anno: p.anno, km: p.km })}`);
+  get<StatoStima>(`/allestimenti/${id}/usura?${new URLSearchParams(
+    Object.entries(corpo({ anno: p.anno, km: p.km })).map(([k, v]) => [k, String(v)]),
+  )}`);
