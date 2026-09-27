@@ -1,43 +1,24 @@
-# Astro Starter Kit: Minimal
+# Vroomy — website
+
+The website of Vroomy: pick a vehicle (year → make → model → trim) and get a sheet with purchase
+price, insurance, road tax and typical problems. Built with Astro as a static site.
+
+The backend (FastAPI + Postgres, with an LLM used as a cache), the data sources and the project
+rules live in [Vroomy-be](https://github.com/quake1234/Vroomy-be). This site calculates nothing:
+it displays values computed by the backend, and always shows whether each one is official data or
+an LLM estimate.
+
+## Run locally
 
 ```sh
-npm create astro@latest -- --template minimal
+npm install
+npm run dev        # http://localhost:4321
+npm run build      # static site in dist/
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+The site calls the backend at `PUBLIC_API_URL` (default `http://127.0.0.1:8000`, no trailing
+slash). The backend must list the site's origin in `CORS_ORIGINS`.
 
-## 🚀 Project Structure
+## Deployment
 
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Vercel project with the Astro preset (`vercel.json`), `PUBLIC_API_URL` set to the backend URL.

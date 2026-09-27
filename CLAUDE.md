@@ -1,3 +1,39 @@
+# Vroomy — sito
+
+Il sito di Vroomy: scelta del veicolo (anno → marca → modello → allestimento) e scheda con prezzo,
+assicurazione, bollo e problemi tipici. Astro, sito statico.
+
+**Il resto del progetto sta nel repository del backend**, `quake1234/Vroomy-be` (in locale
+`../vroomy-backend`): regole non negoziabili, architettura, piano tecnico e handoff sono nel suo
+`CLAUDE.md`. Leggilo prima di una modifica che non sia solo grafica. Il contratto tra i due è
+l'API REST del backend (`/docs`).
+
+## Regole del sito
+
+- **Nessun calcolo nel frontend.** Il sito mostra valori già calcolati dal backend; un calcolo
+  qui va spostato in `backend/core/`.
+- **Ogni valore mostra da dove viene**: dato ufficiale o stima LLM, mai confusi.
+- Data di nascita, classe di merito e via vanno solo nel corpo di una `POST`, mai in un URL.
+- Tutte le chiamate al backend passano da `src/lib/api.ts`.
+
+## Comandi
+
+```bash
+npm install
+npm run dev      # http://localhost:4321; il backend in locale su http://127.0.0.1:8000
+npm run build    # sito statico in dist/
+```
+
+`PUBLIC_API_URL` è l'indirizzo del backend (predefinito `http://127.0.0.1:8000`, senza `/`
+finale: `api.ts` ci attacca i percorsi). Il backend deve avere l'origine del sito in
+`CORS_ORIGINS`.
+
+**Produzione**: progetto Vercel `vroomy-fe`, https://vroomy-fe.vercel.app, preset Astro
+(`vercel.json`), `PUBLIC_API_URL=https://vroomy-two.vercel.app`. Ogni push sul branch di
+produzione pubblica solo il sito.
+
+---
+
 ## Development
 
 When starting the dev server, use background mode:
