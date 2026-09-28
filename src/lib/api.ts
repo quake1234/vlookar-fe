@@ -14,7 +14,16 @@ export interface VoceCatalogo {
 export interface Allestimento extends VoceCatalogo {
   fuel: string | null;
   in_production: boolean | null;
+  /** null se non si sa. Origine: "nome" = letti dal nome ACI (dei CV e kW, uno è calcolato),
+   * "manuale" = corretti a mano, "ufficiale" = da una fonte aperta. */
+  carrozzeria: string | null;
+  carrozzeria_origine: OrigineDettaglio | null;
+  cv: number | null;
+  kw: number | null;
+  potenza_origine: OrigineDettaglio | null;
 }
+
+export type OrigineDettaglio = "nome" | "manuale" | "ufficiale";
 
 export interface Intervallo {
   min: number;
