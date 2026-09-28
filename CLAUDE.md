@@ -16,6 +16,14 @@ l'API REST del backend (`/docs`).
 - Data di nascita, classe di merito e via vanno solo nel corpo di una `POST`, mai in un URL.
 - Tutte le chiamate al backend passano da `src/lib/api.ts`.
 
+## Claude Code
+
+Questo repository ha il suo `.claude/`: l'agente `revisore-sito` (da usare dopo una modifica,
+prima di considerarla chiusa) e la skill `avvia-sito` (Postgres e backend da
+`../vroomy-backend`, sito da qui). Agenti e skill su dati, fonti, bollo e catalogo stanno nel
+repository del backend: per quel lavoro apri la sessione in `../vroomy-backend`. Lo stato del
+lavoro e i prossimi passi sono in `../vroomy-backend/docs/HANDOFF.md`.
+
 ## Comandi
 
 ```bash
