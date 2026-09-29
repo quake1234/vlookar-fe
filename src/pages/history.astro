@@ -57,7 +57,7 @@ import Base from "../layouts/Base.astro";
           <th scope="col">Auto</th>
           <th scope="col">Anno</th>
           <th scope="col">Chilometri</th>
-          <th scope="col" class="num">Costo annuo <span class="origine origine-calcolato">Calcolato</span></th>
+          <th scope="col">Costo annuo <span class="origine origine-calcolato">Calcolato</span></th>
           <th scope="col">Cercata il</th>
           <th scope="col"><span class="visually-hidden">Azioni</span></th>
         </tr>
@@ -151,6 +151,7 @@ import Base from "../layouts/Base.astro";
   }
 
   /* ------------------------------------------------ elenco */
+  /* Le righe le scrive lo script (innerHTML): i loro selettori vanno in :global. */
   .tabella {
     width: 100%;
     border-collapse: collapse;
@@ -163,57 +164,58 @@ import Base from "../layouts/Base.astro";
     text-transform: uppercase;
     color: var(--grafite);
     text-align: left;
-    padding: 0 12px 10px 0;
+    padding: 0 16px 10px 0;
     border-bottom: 1px solid var(--inchiostro);
     white-space: nowrap;
   }
   .tabella th .origine {
-    margin-left: 6px;
+    margin-left: 8px;
     text-transform: none;
     letter-spacing: 0.04em;
   }
-  .tabella td {
-    padding: 14px 12px 14px 0;
+  .tabella :global(td) {
+    padding: 14px 16px 14px 0;
     border-bottom: 1px solid var(--filo);
     vertical-align: top;
+    text-align: left;
   }
-  .num {
-    text-align: right;
-  }
-  .tabella th.num {
-    text-align: right;
-  }
-  .auto a {
+  .tabella :global(.auto a) {
     font-weight: 700;
     color: var(--inchiostro);
   }
-  .auto .versione {
+  .tabella :global(.versione) {
     display: block;
     margin-top: 2px;
     color: var(--grafite);
     font-size: 0.875rem;
   }
-  .costo-cella {
+  .tabella :global(.costo-cella) {
     font-weight: 700;
     white-space: nowrap;
   }
-  .costo-cella .origine {
+  .tabella :global(.costo-cella .origine) {
+    display: none;   /* su schermo largo è nell'intestazione della colonna */
     margin-left: 8px;
     font-weight: 400;
   }
-  @media (min-width: 720px) {
-    .costo-cella .origine {
-      display: none;   /* già nell'intestazione della colonna */
-    }
-  }
-  .costo-cella.mancante {
+  .tabella :global(.costo-cella.mancante) {
     font-weight: 400;
     color: var(--grafite);
   }
-  .azioni-riga {
-    text-align: right;
-    white-space: nowrap;
+  .tabella :global(td.azioni-riga) {
     padding-right: 0;
+    white-space: nowrap;
+  }
+  .tabella :global(.azioni) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+  }
+  .tabella :global(.btn-scheda) {
+    min-height: 36px;
+    padding: 6px 14px;
+    font-size: 0.875rem;
   }
   .pericolo {
     color: var(--neg);
@@ -230,23 +232,24 @@ import Base from "../layouts/Base.astro";
     }
     .tabella,
     .tabella tbody,
-    .tabella tr,
-    .tabella td {
+    .tabella :global(tr),
+    .tabella :global(td) {
       display: block;
     }
-    .tabella tr {
+    .tabella :global(tr) {
       padding: 14px 0;
       border-bottom: 1px solid var(--filo);
     }
-    .tabella td {
+    .tabella :global(td) {
       display: flex;
       justify-content: space-between;
+      align-items: baseline;
       gap: 12px;
       padding: 3px 0;
       border: 0;
       text-align: right;
     }
-    .tabella td::before {
+    .tabella :global(td::before) {
       content: attr(data-etichetta);
       font-family: var(--mono);
       font-size: 0.6875rem;
@@ -255,18 +258,21 @@ import Base from "../layouts/Base.astro";
       color: var(--grafite);
       text-align: left;
     }
-    .tabella td.auto {
+    .tabella :global(td.auto) {
       display: block;
       text-align: left;
       padding-bottom: 8px;
     }
-    .tabella td.auto::before,
-    .tabella td.azioni-riga::before {
+    .tabella :global(td.auto::before),
+    .tabella :global(td.azioni-riga::before) {
       content: none;
     }
-    .tabella td.azioni-riga {
-      justify-content: flex-end;
-      padding-top: 6px;
+    .tabella :global(td.azioni-riga) {
+      display: block;
+      padding-top: 10px;
+    }
+    .tabella :global(.costo-cella .origine) {
+      display: inline-flex;
     }
   }
 
@@ -345,15 +351,18 @@ import Base from "../layouts/Base.astro";
   function riga(r: api.Ricerca): string {
     const a = r.allestimento;
     const costo = formatIntervallo(r.costo_annuo);
+    const nome = esc(`${nomeLeggibile(a.marca)} ${nomeLeggibile(a.modello)} ${a.nome}`);
     return `<tr>
       <td class="auto"><a href="${esc(linkScheda(r))}">${esc(nomeLeggibile(a.marca))} ${esc(nomeLeggibile(a.modello))}</a>
         <span class="versione">${esc(a.nome)}</span></td>
       <td data-etichetta="Anno">${r.anno !== null ? esc(r.anno) : "Nuova"}</td>
       <td data-etichetta="Chilometri">${r.km !== null ? esc(nomeFasciaKm(r.km)) : "Non indicati"}</td>
-      <td data-etichetta="Costo annuo" class="num cifra costo-cella${costo ? "" : " mancante"}">${costo ? `${esc(costo)} <span class="origine origine-calcolato">Calcolato</span>` : "Non ancora calcolato"}</td>
+      <td data-etichetta="Costo annuo" class="cifra costo-cella${costo ? "" : " mancante"}">${costo ? `${esc(costo)} <span class="origine origine-calcolato">Calcolato</span>` : "Non ancora calcolato"}</td>
       <td data-etichetta="Cercata il">${esc(formatData(r.cercata_il))}</td>
-      <td class="azioni-riga"><button type="button" class="btn-link" data-rimuovi="${r.id}"
-        aria-label="Rimuovi ${esc(nomeLeggibile(a.marca))} ${esc(nomeLeggibile(a.modello))} ${esc(a.nome)} dalla cronologia">Rimuovi</button></td>
+      <td class="azioni-riga"><div class="azioni">
+        <a class="btn btn-secondario btn-scheda" href="${esc(linkScheda(r))}" aria-label="Apri la scheda di ${nome}">Scheda</a>
+        <button type="button" class="btn-link" data-rimuovi="${r.id}" aria-label="Rimuovi ${nome} dalla cronologia">Rimuovi</button>
+      </div></td>
     </tr>`;
   }
 
