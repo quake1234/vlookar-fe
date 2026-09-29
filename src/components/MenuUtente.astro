@@ -1,6 +1,6 @@
 ---
-// Menu utente nella barra in alto: riepilogo dei dati salvati nel browser, modifica e
-// cancellazione. In M2 qui arriveranno anche accesso e profilo.
+// Menu utente nella barra in alto: accesso e uscita, riepilogo dei dati (nell'account o nel
+// browser), modifica e cancellazione.
 import { ICONE } from "../lib/icone";
 ---
 
@@ -12,6 +12,11 @@ import { ICONE } from "../lib/icone";
   </button>
 
   <div id="menu-utente-pannello" class="pannello-menu" hidden>
+    <div id="menu-utente-account" class="account" hidden>
+      <p id="menu-utente-chi" class="small chi"></p>
+      <button id="menu-utente-accedi" type="button" class="btn accedi">Accedi o registrati</button>
+      <button id="menu-utente-esci" type="button" class="voce">Esci</button>
+    </div>
     <p class="titolo">I tuoi dati</p>
     <dl id="menu-utente-dati" class="dati-elenco"></dl>
     <p id="menu-utente-vuoto" class="small muted vuoto" hidden>Non hai ancora inserito i tuoi dati. Servono a calcolare bollo e assicurazione.</p>
@@ -19,7 +24,7 @@ import { ICONE } from "../lib/icone";
       <button id="menu-utente-modifica" type="button" class="voce"></button>
       <button id="menu-utente-cancella" type="button" class="voce voce-pericolo">Cancella i dati</button>
     </div>
-    <p class="small muted nota">Restano in questo browser. Per stimare la tua assicurazione, data di nascita, classe di merito e via vengono inviate al servizio AI e conservate per riutilizzare la stima.</p>
+    <p class="small muted nota"><span id="menu-utente-dove">Restano in questo browser.</span> Per stimare la tua assicurazione, data di nascita, classe di merito e via vengono inviate al servizio AI e conservate per riutilizzare la stima.</p>
   </div>
 </div>
 
@@ -67,6 +72,20 @@ import { ICONE } from "../lib/icone";
     border: 1px solid var(--border);
     border-radius: var(--radius);
     border-color: var(--inchiostro);
+  }
+  .account {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .chi {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .accedi {
+    width: 100%;
   }
   .titolo {
     margin: 0 0 10px;
@@ -126,6 +145,7 @@ import { ICONE } from "../lib/icone";
 </style>
 
 <script>
+  import * as accesso from "../lib/accesso";
   import { esc, formatData } from "../lib/formato";
   import * as ipotesi from "../lib/ipotesi";
 
@@ -137,6 +157,11 @@ import { ICONE } from "../lib/icone";
   const punto = $("menu-utente-punto");
   const modifica = $<HTMLButtonElement>("menu-utente-modifica");
   const cancella = $<HTMLButtonElement>("menu-utente-cancella");
+  const account = $("menu-utente-account");
+  const chi = $("menu-utente-chi");
+  const accedi = $<HTMLButtonElement>("menu-utente-accedi");
+  const esci = $<HTMLButtonElement>("menu-utente-esci");
+  const dove = $("menu-utente-dove");
 
   function aggiorna(i: ipotesi.Ipotesi | null) {
     const righe: Array<[string, string]> = i
@@ -153,6 +178,13 @@ import { ICONE } from "../lib/icone";
     cancella.hidden = !i;
     punto.hidden = !!i;
     modifica.textContent = i ? "Modifica i dati" : "Inserisci i dati";
+    const u = ipotesi.account();
+    account.hidden = !accesso.disponibile;
+    chi.innerHTML = u ? `Accesso fatto come <strong>${esc(u.email ?? "utente")}</strong>` : "";
+    chi.hidden = !u;
+    accedi.hidden = !!u;
+    esci.hidden = !u;
+    dove.textContent = u ? "Sono salvati nel tuo account." : "Restano in questo browser.";
   }
 
   function apriMenu(aperto: boolean) {
@@ -177,13 +209,34 @@ import { ICONE } from "../lib/icone";
     ipotesi.apriDati();
   });
 
-  cancella.addEventListener("click", () => {
-    if (!confirm("Cancellare i tuoi dati da questo browser?")) return;
-    ipotesi.cancella();
+  cancella.addEventListener("click", async () => {
+    const domanda = ipotesi.account()
+      ? "Cancellare i tuoi dati dal tuo account? L'account resta."
+      : "Cancellare i tuoi dati da questo browser?";
+    if (!confirm(domanda)) return;
+    try {
+      await ipotesi.cancella();
+    } catch (e) {
+      console.error(e);
+      alert("Non riusciamo a cancellare i dati. Controlla la connessione e riprova.");
+      return;
+    }
     apriMenu(false);
     ipotesi.annuncia(null);
   });
 
+  accedi.addEventListener("click", () => {
+    apriMenu(false);
+    accesso.vaiAdAccesso();
+  });
+
+  // L'uscita arriva a ipotesi.ts come evento di accesso: i dati tornano quelli del browser.
+  esci.addEventListener("click", async () => {
+    apriMenu(false);
+    await accesso.esci();
+  });
+
   ipotesi.suCambio(aggiorna);
   aggiorna(ipotesi.leggi());
+  ipotesi.attendi().then(() => aggiorna(ipotesi.leggi()));
 </script>

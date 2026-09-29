@@ -200,12 +200,12 @@ async function post<T>(path: string, corpo: object, signal?: AbortSignal): Promi
 }
 
 // anno: anno di immatricolazione. Con l'anno il backend dà solo ciò che era in listino quell'anno.
-const perAnno = (anno?: number | null) => (anno ? `?anno=${anno}` : "");
-export const marche = (anno?: number | null) => get<VoceCatalogo[]>(`/marche${perAnno(anno)}`);
+const perAnno = (anno?: number | null) => (anno ? `?year=${anno}` : "");
+export const marche = (anno?: number | null) => get<VoceCatalogo[]>(`/makes${perAnno(anno)}`);
 export const modelli = (marcaId: number, anno?: number | null) =>
-  get<VoceCatalogo[]>(`/marche/${marcaId}/modelli${perAnno(anno)}`);
+  get<VoceCatalogo[]>(`/makes/${marcaId}/models${perAnno(anno)}`);
 export const allestimenti = (modelloId: number, anno?: number | null) =>
-  get<Allestimento[]>(`/modelli/${modelloId}/allestimenti${perAnno(anno)}`);
+  get<Allestimento[]>(`/models/${modelloId}/versions${perAnno(anno)}`);
 
 /** Una via suggerita dal geocoder (dati OpenStreetMap). regione è la chiave per il bollo. */
 export interface Indirizzo {
@@ -218,7 +218,7 @@ export interface Indirizzo {
 }
 
 export const indirizzi = (q: string, signal?: AbortSignal) =>
-  post<Indirizzo[]>("/indirizzi", { q }, signal);
+  post<Indirizzo[]>("/addresses", { q }, signal);
 
 /** Ciò che la scheda chiede all'utente. La via serve solo alla stima dell'assicurazione. */
 export interface ParametriScheda {
@@ -251,19 +251,47 @@ function corpo(p: ParametriScheda): Record<string, string | number> {
 }
 
 export const scheda = (id: number, p: ParametriScheda = {}) =>
-  post<Scheda>(`/allestimenti/${id}/scheda`, corpo(p));
+  post<Scheda>(`/versions/${id}/report`, corpo(p));
 
 export type StatoStima = { stato: "pronta" | "limite" | "errore" };
 
 /** Chiede la stima generale dell'allestimento; poi la scheda la contiene. */
-export const stima = (id: number) => get<StatoStima>(`/allestimenti/${id}/stima`);
+export const stima = (id: number) => get<StatoStima>(`/versions/${id}/estimate`);
 
 /** Chiede la stima dell'assicurazione per classe e luogo; poi la scheda la contiene. */
 export const assicurazione = (id: number, p: ParametriScheda) =>
-  post<StatoStima>(`/allestimenti/${id}/assicurazione`, corpo(p));
+  post<StatoStima>(`/versions/${id}/insurance`, corpo(p));
 
 /** Chiede la stima per anno e fascia di km; poi la scheda la contiene. */
 export const usura = (id: number, p: ParametriScheda) =>
-  get<StatoStima>(`/allestimenti/${id}/usura?${new URLSearchParams(
-    Object.entries(corpo({ anno: p.anno, km: p.km })).map(([k, v]) => [k, String(v)]),
-  )}`);
+  get<StatoStima>(`/versions/${id}/mileage?${new URLSearchParams([
+    ...(p.anno ? [["year", String(p.anno)]] : []),
+    ...(p.km != null ? [["km", String(p.km)]] : []),
+  ])}`);
+
+// ---------------------------------------------------------------- profilo (utente registrato)
+// Il token è quello di Supabase Auth (lib/accesso.ts). I dati personali viaggiano solo nel
+// corpo della richiesta e della risposta, mai nell'URL.
+
+/** I dati dell'utente come li salva il backend (tabella user_profiles, /profile). */
+export interface Profilo {
+  regione: string;
+  nascita: string | null;
+  classe: string | null;
+  indirizzo: Indirizzo | null;
+}
+
+async function conToken<T>(metodo: string, path: string, token: string, corpo?: object): Promise<T> {
+  const res = await fetch(API_URL + path, {
+    method: metodo,
+    headers: { Authorization: `Bearer ${token}`, ...(corpo ? { "Content-Type": "application/json" } : {}) },
+    body: corpo ? JSON.stringify(corpo) : undefined,
+  });
+  if (!res.ok) throw new ErroreApi(res.status);
+  return (res.status === 204 ? null : await res.json()) as T;
+}
+
+/** null se l'utente non ha ancora salvato i suoi dati. */
+export const profilo = (token: string) => conToken<Profilo | null>("GET", "/profile", token);
+export const salvaProfilo = (token: string, p: Profilo) => conToken<Profilo>("PUT", "/profile", token, p);
+export const cancellaProfilo = (token: string) => conToken<null>("DELETE", "/profile", token);

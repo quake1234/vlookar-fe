@@ -2,7 +2,7 @@
 // Form dei dati dell'utente (via, regione, data di nascita, classe di merito), in una finestra di
 // dialogo. Unico per tutto il sito: lo aprono il menu utente e la pagina scheda con
 // ipotesi.apriDati(); al salvataggio annuncia i dati nuovi con ipotesi.annuncia().
-// I dati restano nel browser (lib/ipotesi.ts).
+// I dati stanno nell'account se l'utente ha fatto accesso, altrimenti nel browser (lib/ipotesi.ts).
 import { ICONE } from "../lib/icone";
 import { CLASSI, REGIONI } from "../lib/ipotesi";
 
@@ -54,9 +54,12 @@ const nascitaMax = `${oggi - 18}-12-31`;
       </div>
     </div>
 
+    <p id="dati-dove" class="small muted dove"></p>
+    <p id="dati-errore" class="errore small" role="alert" hidden></p>
+
     <div class="azioni">
       <button type="button" class="btn btn-secondario" data-chiudi>Annulla</button>
-      <button type="submit" class="btn">Salva</button>
+      <button id="dati-salva" type="submit" class="btn">Salva</button>
     </div>
   </form>
 </dialog>
@@ -168,6 +171,22 @@ const nascitaMax = `${oggi - 18}-12-31`;
     font-size: 0.8125rem;
     color: var(--muted);
   }
+  .dove {
+    margin: 0;
+  }
+  .dove :global(button) {
+    font: inherit;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--inchiostro);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .errore {
+    margin: 0;
+    color: var(--neg);
+  }
   .azioni {
     display: flex;
     justify-content: flex-end;
@@ -176,6 +195,7 @@ const nascitaMax = `${oggi - 18}-12-31`;
 </style>
 
 <script>
+  import * as accesso from "../lib/accesso";
   import * as api from "../lib/api";
   import type { Indirizzo } from "../lib/api";
   import { esc } from "../lib/formato";
@@ -190,6 +210,9 @@ const nascitaMax = `${oggi - 18}-12-31`;
   const inIndirizzo = $<HTMLInputElement>("indirizzo");
   const lista = $<HTMLUListElement>("indirizzo-lista");
   const statoIndirizzo = $("indirizzo-stato");
+  const dove = $("dati-dove");
+  const erroreSalva = $("dati-errore");
+  const btnSalva = $<HTMLButtonElement>("dati-salva");
   const AIUTO_INDIRIZZO = statoIndirizzo.textContent ?? "";
 
   // ---------------------------------------------------------------- via
@@ -307,7 +330,9 @@ const nascitaMax = `${oggi - 18}-12-31`;
 
   // ---------------------------------------------------------------- apertura e salvataggio
 
-  function apri() {
+  async function apri() {
+    // Con l'accesso i dati arrivano dal backend: prima di allora il form li mostrerebbe vecchi.
+    await ipotesi.attendi();
     const attuali = ipotesi.leggi();
     selRegione.value = attuali?.regione ?? "";
     inNascita.value = attuali?.nascita ?? "";
@@ -317,18 +342,30 @@ const nascitaMax = `${oggi - 18}-12-31`;
     trovati = [];
     chiudiLista();
     statoIndirizzo.textContent = AIUTO_INDIRIZZO;
+    erroreSalva.hidden = true;
+    const u = ipotesi.account();
+    dove.innerHTML = u
+      ? `Li salviamo nel tuo account${u.email ? ` (${esc(u.email)})` : ""}: li ritrovi su ogni dispositivo.`
+      : accesso.disponibile
+        ? `Restano in questo browser. <button type="button" data-accedi>Accedi</button> per ritrovarli su ogni dispositivo.`
+        : "Restano in questo browser.";
     if (!dialog.open) dialog.showModal();
     inIndirizzo.focus();
   }
 
   ipotesi.suApriDati(apri);
+  dove.addEventListener("click", (e) => {
+    if (!(e.target as HTMLElement).closest("[data-accedi]")) return;
+    dialog.close();
+    accesso.vaiAdAccesso();
+  });
   dialog.querySelectorAll("[data-chiudi]").forEach((b) => b.addEventListener("click", () => dialog.close()));
   // un clic sullo sfondo, fuori dalla finestra, la chiude
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) dialog.close();
   });
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     // Si salva solo una via scelta dall'elenco, mai il testo digitato.
     if (inIndirizzo.value.trim() && !scelto) {
@@ -350,7 +387,20 @@ const nascitaMax = `${oggi - 18}-12-31`;
       indirizzo: scelto,
       classe: selClasse.value || null,
     };
-    ipotesi.salva(i);
+    btnSalva.disabled = true;
+    erroreSalva.hidden = true;
+    try {
+      await ipotesi.salva(i);
+    } catch (err) {
+      console.error(err);
+      erroreSalva.textContent = err instanceof api.ErroreApi && err.status === 401
+        ? "La sessione è scaduta: esci e accedi di nuovo."
+        : "Non riusciamo a salvare i dati nel tuo account. Controlla la connessione e riprova.";
+      erroreSalva.hidden = false;
+      return;
+    } finally {
+      btnSalva.disabled = false;
+    }
     dialog.close();
     ipotesi.annuncia(i);
   });

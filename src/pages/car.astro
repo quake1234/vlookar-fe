@@ -1084,6 +1084,7 @@ import Base from "../layouts/Base.astro";
   if (!Number.isInteger(id) || id <= 0) {
     mostraErrore("Nessuna auto selezionata.", true);
   } else {
+    await ipotesi.attendi();   // con l'accesso i dati arrivano dal backend
     const salvate = ipotesi.leggi();
     if (salvate) {
       mostraProfilo(salvate);

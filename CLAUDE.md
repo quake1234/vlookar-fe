@@ -14,7 +14,11 @@ l'API REST del backend (`/docs`).
   qui va spostato in `backend/core/`.
 - **Ogni valore mostra da dove viene**: dato ufficiale o stima LLM, mai confusi.
 - Data di nascita, classe di merito e via vanno solo nel corpo di una `POST`, mai in un URL.
-- Tutte le chiamate al backend passano da `src/lib/api.ts`.
+- Tutte le chiamate al backend passano da `src/lib/api.ts`; quelle a Supabase Auth (accesso,
+  pagina `/login`) solo da `src/lib/accesso.ts`. Chi ha fatto accesso ha i dati nel profilo del
+  backend (`/profile`), non nel localStorage.
+- **Tutti gli URL sono in inglese**: pagine (`/car`, `/login`), parametri (`?id=`, `?year=`,
+  `?km=`, `?mode=`, `?next=`) e endpoint del backend. Testi e codice restano in italiano.
 
 ## Claude Code
 
@@ -34,7 +38,8 @@ npm run build    # sito statico in dist/
 
 `PUBLIC_API_URL` è l'indirizzo del backend (predefinito `http://127.0.0.1:8000`, senza `/`
 finale: `api.ts` ci attacca i percorsi). Il backend deve avere l'origine del sito in
-`CORS_ORIGINS`.
+`CORS_ORIGINS`. `PUBLIC_SUPABASE_URL` e `PUBLIC_SUPABASE_ANON_KEY` (chiave pubblica, mai la
+service_role) attivano l'accesso; senza, il sito lo nasconde e i dati restano nel browser.
 
 **Produzione**: progetto Vercel `vroomy-fe`, https://vroomy-fe.vercel.app, preset Astro
 (`vercel.json`), `PUBLIC_API_URL=https://vroomy-two.vercel.app`. Ogni push sul branch di

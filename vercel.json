@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "astro",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/scheda", "destination": "/car", "permanent": true },
+    { "source": "/accesso", "destination": "/login", "permanent": true }
+  ]
 }

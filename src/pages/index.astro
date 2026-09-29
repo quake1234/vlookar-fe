@@ -337,8 +337,8 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     e.preventDefault();
     if (!allestimento.value) return;
     const q = new URLSearchParams({ id: allestimento.value });
-    if (anno.value) q.set("anno", anno.value);
+    if (anno.value) q.set("year", anno.value);
     if (km.value) q.set("km", km.value);
-    location.href = `/scheda?${q}`;
+    location.href = `/car?${q}`;
   });
 </script>

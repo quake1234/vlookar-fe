@@ -1,0 +1,290 @@
+---
+// Pagina di accesso: email e password, o Google (Supabase Auth, lib/accesso.ts). Un solo form
+// per quattro modi, scelti da ?mode=: login, signup, reset (manda il link per cambiare
+// password), new-password (ci si arriva da quel link). ?next= è la pagina a cui tornare.
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Accedi — Vroomy" description="Accedi a Vroomy per ritrovare i tuoi dati su ogni dispositivo." legenda={false}>
+  <div class="wrap accesso">
+    <section class="riquadro" aria-labelledby="titolo">
+      <h1 id="titolo">Accedi</h1>
+      <p id="sottotitolo" class="muted">Ritrovi i tuoi dati (regione, data di nascita, classe di merito, via) su ogni dispositivo.</p>
+
+      <p id="non-attivo" class="avviso" hidden>L'accesso non è ancora attivo. I tuoi dati restano in questo browser.</p>
+
+      <div id="gia-dentro" class="gia-dentro" hidden>
+        <p>Hai già fatto accesso come <strong id="gia-email"></strong>.</p>
+        <div class="riga">
+          <a id="gia-torna" class="btn" href="/">Continua</a>
+          <button id="gia-esci" type="button" class="btn btn-secondario">Esci</button>
+        </div>
+      </div>
+
+      <div id="con-google" hidden>
+        <button id="google" type="button" class="btn btn-secondario google">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.8h3.6c2.1-1.9 3.3-4.8 3.3-8.1z"/>
+            <path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.9A11 11 0 0 0 12 23z"/>
+            <path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7H2.1a11 11 0 0 0 0 10z"/>
+            <path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7l3.7 2.9C6.7 7.3 9.1 5.4 12 5.4z"/>
+          </svg>
+          Continua con Google
+        </button>
+        <p class="oppure small muted"><span>oppure con l'email</span></p>
+      </div>
+
+      <form id="form" class="form" novalidate hidden>
+        <div id="campo-email">
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="email" required />
+        </div>
+        <div id="campo-password">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required
+                 aria-describedby="password-nota" />
+          <p id="password-nota" class="nota small muted" hidden>Almeno 8 caratteri.</p>
+        </div>
+        <p id="errore" class="errore small" role="alert" hidden></p>
+        <button id="invia" type="submit" class="btn">Accedi</button>
+      </form>
+
+      <p id="esito" class="esito" role="status" hidden></p>
+
+      <nav id="altri-modi" class="altri small" aria-label="Altre opzioni"></nav>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .accesso {
+    display: grid;
+    justify-items: center;
+    padding-top: 48px;
+  }
+  .riquadro {
+    width: min(420px, 100%);
+    display: grid;
+    gap: 16px;
+  }
+  h1 {
+    font-size: 2rem;
+  }
+  .riquadro > p {
+    margin: 0;
+  }
+  .google {
+    width: 100%;
+  }
+  .oppure {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 0;
+  }
+  .oppure::before,
+  .oppure::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--line);
+  }
+  .form {
+    display: grid;
+    gap: 14px;
+  }
+  .form input {
+    width: 100%;
+  }
+  label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 6px;
+  }
+  .nota {
+    margin: 6px 0 0;
+  }
+  .errore {
+    margin: 0;
+    color: var(--neg);
+  }
+  .avviso,
+  .esito,
+  .gia-dentro {
+    padding: 14px;
+    border: 1px solid var(--inchiostro);
+    border-radius: var(--radius-sm);
+  }
+  .gia-dentro p {
+    margin: 0 0 12px;
+    overflow-wrap: anywhere;
+  }
+  .riga {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .altri {
+    display: grid;
+    gap: 6px;
+  }
+  .altri :global(a) {
+    color: var(--inchiostro);
+  }
+</style>
+
+<script>
+  import * as accesso from "../lib/accesso";
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const form = $<HTMLFormElement>("form");
+  const inEmail = $<HTMLInputElement>("email");
+  const inPassword = $<HTMLInputElement>("password");
+  const errore = $("errore");
+  const esito = $("esito");
+  const invia = $<HTMLButtonElement>("invia");
+
+  const params = new URLSearchParams(location.search);
+  const MODI: accesso.Modo[] = ["login", "signup", "reset", "new-password"];
+  const modo = MODI.find((m) => m === params.get("mode")) ?? "login";
+  const dopo = accesso.destinazione(location.search);
+
+  const TESTI: Record<accesso.Modo, { titolo: string; sotto: string; invia: string }> = {
+    login: {
+      titolo: "Accedi",
+      sotto: "Ritrovi i tuoi dati (regione, data di nascita, classe di merito, via) su ogni dispositivo.",
+      invia: "Accedi",
+    },
+    signup: {
+      titolo: "Crea un account",
+      sotto: "Ti serve solo l'email. I dati che hai già inserito in questo browser passano nel tuo account.",
+      invia: "Crea l'account",
+    },
+    reset: {
+      titolo: "Password dimenticata",
+      sotto: "Scrivi la tua email: ti mandiamo un link per sceglierne una nuova.",
+      invia: "Mandami il link",
+    },
+    "new-password": {
+      titolo: "Nuova password",
+      sotto: "Scegli la nuova password del tuo account.",
+      invia: "Salva la password",
+    },
+  };
+
+  /** Link a un altro modo, conservando la pagina a cui tornare. */
+  const link = (m: accesso.Modo, testo: string) =>
+    `<a href="/login?${new URLSearchParams({ mode: m, next: dopo })}">${testo}</a>`;
+
+  function prepara() {
+    const t = TESTI[modo];
+    $("titolo").textContent = t.titolo;
+    $("sottotitolo").textContent = t.sotto;
+    document.title = `${t.titolo} — Vroomy`;
+    invia.textContent = t.invia;
+    $("con-google").hidden = modo !== "login" && modo !== "signup";
+    $("campo-email").hidden = modo === "new-password";
+    $("campo-password").hidden = modo === "reset";
+    const nuova = modo === "signup" || modo === "new-password";
+    inPassword.autocomplete = nuova ? "new-password" : "current-password";
+    $("password-nota").hidden = !nuova;
+    if (nuova) inPassword.minLength = 8;   // chi accede può avere una password più vecchia
+    $("altri-modi").innerHTML = {
+      login: `<span>Non hai un account? ${link("signup", "Registrati")}</span>${link("reset", "Password dimenticata?")}`,
+      signup: `<span>Hai già un account? ${link("login", "Accedi")}</span>`,
+      reset: `<span>${link("login", "Torna all'accesso")}</span>`,
+      "new-password": "",
+    }[modo];
+    form.hidden = false;
+  }
+
+  function mostraErrore(testo: string | null) {
+    errore.textContent = testo ?? "";
+    errore.hidden = !testo;
+  }
+
+  /** Finito: il form sparisce e resta il messaggio. */
+  function mostraEsito(testo: string) {
+    form.hidden = true;
+    $("con-google").hidden = true;
+    esito.textContent = testo;
+    esito.hidden = false;
+  }
+
+  function valido(): boolean {
+    const campi = [
+      ...(modo !== "new-password" ? [inEmail] : []),
+      ...(modo !== "reset" ? [inPassword] : []),
+    ];
+    const sbagliato = campi.find((c) => !c.checkValidity());
+    sbagliato?.reportValidity();
+    return !sbagliato;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    mostraErrore(null);
+    if (!valido()) return;
+    const email = inEmail.value.trim();
+    const password = inPassword.value;
+    invia.disabled = true;
+    try {
+      if (modo === "login") {
+        const err = await accesso.accedi(email, password);
+        if (err) return mostraErrore(err);
+        location.href = dopo;
+      } else if (modo === "signup") {
+        const r = await accesso.registrati(email, password);
+        if (r.errore) return mostraErrore(r.errore);
+        if (!r.confermare) {
+          location.href = dopo;
+          return;
+        }
+        mostraEsito(`Ti abbiamo mandato un'email a ${email}: apri il link per confermare l'account, poi accedi.`);
+      } else if (modo === "reset") {
+        const err = await accesso.recuperaPassword(email);
+        if (err) return mostraErrore(err);
+        // Stessa risposta che l'email sia registrata o no: non si rivela chi è iscritto.
+        mostraEsito(`Se ${email} è registrata, riceverai un link per scegliere la nuova password.`);
+      } else {
+        const err = await accesso.nuovaPassword(password);
+        if (err) return mostraErrore(err);
+        mostraEsito("Password cambiata. Ora sei dentro con la nuova password.");
+        $("altri-modi").innerHTML = `<a href="/">Vai alla home</a>`;
+      }
+    } catch (err) {
+      console.error(err);
+      mostraErrore("Non riusciamo a raggiungere il servizio di accesso. Controlla la connessione e riprova.");
+    } finally {
+      invia.disabled = false;
+    }
+  });
+
+  $("google").addEventListener("click", async () => {
+    mostraErrore(null);
+    const err = await accesso.google(dopo);
+    if (err) mostraErrore(err);
+  });
+
+  $("gia-esci").addEventListener("click", async () => {
+    await accesso.esci();
+    location.reload();
+  });
+
+  if (!accesso.disponibile) {
+    $("non-attivo").hidden = false;
+  } else {
+    // Tornando dal link dell'email, Supabase apre la sessione con il codice nell'URL.
+    const u = await accesso.attuale();
+    if (modo === "new-password") {
+      if (u) prepara();
+      else mostraEsito("Il link non è più valido. Chiedine uno nuovo.");
+      if (!u) $("altri-modi").innerHTML = link("reset", "Chiedi un nuovo link");
+    } else if (u) {
+      $("gia-email").textContent = u.email ?? "utente";
+      $<HTMLAnchorElement>("gia-torna").href = dopo;
+      $("gia-dentro").hidden = false;
+    } else {
+      prepara();
+    }
+  }
+</script>
