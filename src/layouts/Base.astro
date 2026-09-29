@@ -31,7 +31,7 @@ const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazion
       <div class="wrap barra-interno">
         <a href="/" class="logo" aria-label="Vroomy, torna alla home">vroomy</a>
         <div class="barra-destra">
-          <nav class="small"><a href="/">Scegli un'auto</a></nav>
+          <nav class="small"><a href="/">Scegli un'auto</a>{!pubblica && <a href="/history">Le tue ricerche</a>}</nav>
           <MenuUtente />
         </div>
       </div>
@@ -90,9 +90,19 @@ const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazion
     align-items: center;
     gap: 20px;
   }
+  nav {
+    display: flex;
+    gap: 16px;
+  }
   nav a {
     font-family: var(--mono);
     font-size: 0.8125rem;
+  }
+  /* Telefoni stretti: il logo porta già alla home, resta solo "Le tue ricerche". */
+  @media (max-width: 479px) {
+    nav a[href="/"]:not(:only-child) {
+      display: none;
+    }
   }
   main {
     padding-bottom: 72px;

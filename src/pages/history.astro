@@ -1,0 +1,470 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Le tue ricerche — Vroomy">
+  <div class="wrap pagina">
+    <header class="testata">
+      <h1>Le tue ricerche</h1>
+      <p class="muted">
+        Le auto di cui hai aperto la scheda, una riga per allestimento, anno e chilometri. Il costo
+        annuo è quello dell'ultima volta che l'hai aperta.
+      </p>
+    </header>
+
+    <form id="filtri" class="filtri" aria-label="Filtra le ricerche" novalidate>
+      <div class="campo">
+        <label for="f-marca"><span class="etichetta">Marca</span></label>
+        <select id="f-marca"></select>
+      </div>
+      <div class="campo">
+        <label for="f-modello"><span class="etichetta">Modello</span></label>
+        <select id="f-modello"></select>
+      </div>
+      <div class="campo campo-largo">
+        <label for="f-allestimento"><span class="etichetta">Allestimento</span></label>
+        <select id="f-allestimento"></select>
+      </div>
+      <div class="campo">
+        <label for="f-anno"><span class="etichetta">Anno</span></label>
+        <select id="f-anno"></select>
+      </div>
+      <div class="campo campo-costo">
+        <span class="etichetta" id="f-costo-titolo">Costo annuo (€)</span>
+        <div class="costo" role="group" aria-labelledby="f-costo-titolo">
+          <input id="f-costo-da" type="number" inputmode="numeric" min="0" step="100" placeholder="da" aria-label="Costo annuo da, in euro" />
+          <input id="f-costo-a" type="number" inputmode="numeric" min="0" step="100" placeholder="a" aria-label="Costo annuo fino a, in euro" />
+        </div>
+      </div>
+      <button id="f-azzera" type="button" class="btn-link azzera" hidden>Togli i filtri</button>
+    </form>
+
+    <p id="stato" class="small muted stato" tabindex="-1" role="status" aria-live="polite">Caricamento…</p>
+
+    <div id="errore" class="avviso avviso-azione" hidden>
+      <p>Non riusciamo a caricare le tue ricerche. Controlla la connessione e riprova.</p>
+      <button id="riprova" type="button" class="btn">Riprova</button>
+    </div>
+
+    <div id="vuota" class="avviso avviso-azione" hidden>
+      <p>Non hai ancora cercato nessuna auto. Le schede che apri compariranno qui.</p>
+      <a class="btn" href="/">Scegli un'auto</a>
+    </div>
+
+    <table id="tabella" class="tabella" hidden>
+      <thead>
+        <tr>
+          <th scope="col">Auto</th>
+          <th scope="col">Anno</th>
+          <th scope="col">Chilometri</th>
+          <th scope="col" class="num">Costo annuo <span class="origine origine-calcolato">Calcolato</span></th>
+          <th scope="col">Cercata il</th>
+          <th scope="col"><span class="visually-hidden">Azioni</span></th>
+        </tr>
+      </thead>
+      <tbody id="righe"></tbody>
+    </table>
+
+    <p id="nota" class="small muted nota" hidden>
+      Costo annuo: assicurazione + bollo + tagliandi, sommati dal codice. Il bollo è calcolato con le
+      tariffe ufficiali; assicurazione e tagliandi sono stime AI.
+    </p>
+
+    <div id="piede" class="piede-elenco" hidden>
+      <button id="cancella-tutto" type="button" class="btn-link pericolo">Cancella tutta la cronologia</button>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .pagina {
+    display: grid;
+    gap: 24px;
+    padding-top: clamp(20px, 5vh, 56px);
+  }
+  .testata {
+    display: grid;
+    gap: 10px;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    letter-spacing: -0.045em;
+  }
+  .testata p {
+    margin: 0;
+    max-width: 40em;
+  }
+
+  /* ------------------------------------------------ filtri */
+  .filtri {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: end;
+    padding: 16px 0;
+    border-top: 1px solid var(--inchiostro);
+    border-bottom: 1px solid var(--filo);
+  }
+  .campo {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  .campo-largo,
+  .campo-costo {
+    grid-column: 1 / -1;
+  }
+  .costo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .azzera {
+    justify-self: start;
+  }
+  @media (min-width: 720px) {
+    .filtri {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .campo-largo {
+      grid-column: span 1;
+    }
+    .campo-costo {
+      grid-column: span 2;
+    }
+  }
+  @media (min-width: 1100px) {
+    .filtri {
+      grid-template-columns: 1fr 1fr 1.6fr 0.8fr 1.4fr auto;
+    }
+    .campo-costo {
+      grid-column: span 1;
+    }
+    .azzera {
+      align-self: center;
+      margin-top: 18px;
+    }
+  }
+
+  .stato {
+    margin: 0;
+  }
+
+  /* ------------------------------------------------ elenco */
+  .tabella {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .tabella th {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--grafite);
+    text-align: left;
+    padding: 0 12px 10px 0;
+    border-bottom: 1px solid var(--inchiostro);
+    white-space: nowrap;
+  }
+  .tabella th .origine {
+    margin-left: 6px;
+    text-transform: none;
+    letter-spacing: 0.04em;
+  }
+  .tabella td {
+    padding: 14px 12px 14px 0;
+    border-bottom: 1px solid var(--filo);
+    vertical-align: top;
+  }
+  .num {
+    text-align: right;
+  }
+  .tabella th.num {
+    text-align: right;
+  }
+  .auto a {
+    font-weight: 700;
+    color: var(--inchiostro);
+  }
+  .auto .versione {
+    display: block;
+    margin-top: 2px;
+    color: var(--grafite);
+    font-size: 0.875rem;
+  }
+  .costo-cella {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .costo-cella .origine {
+    margin-left: 8px;
+    font-weight: 400;
+  }
+  @media (min-width: 720px) {
+    .costo-cella .origine {
+      display: none;   /* già nell'intestazione della colonna */
+    }
+  }
+  .costo-cella.mancante {
+    font-weight: 400;
+    color: var(--grafite);
+  }
+  .azioni-riga {
+    text-align: right;
+    white-space: nowrap;
+    padding-right: 0;
+  }
+  .pericolo {
+    color: var(--neg);
+  }
+
+  /* Telefono: ogni riga diventa una scheda, con le etichette accanto ai valori. */
+  @media (max-width: 719px) {
+    .tabella thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .tabella,
+    .tabella tbody,
+    .tabella tr,
+    .tabella td {
+      display: block;
+    }
+    .tabella tr {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--filo);
+    }
+    .tabella td {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 3px 0;
+      border: 0;
+      text-align: right;
+    }
+    .tabella td::before {
+      content: attr(data-etichetta);
+      font-family: var(--mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--grafite);
+      text-align: left;
+    }
+    .tabella td.auto {
+      display: block;
+      text-align: left;
+      padding-bottom: 8px;
+    }
+    .tabella td.auto::before,
+    .tabella td.azioni-riga::before {
+      content: none;
+    }
+    .tabella td.azioni-riga {
+      justify-content: flex-end;
+      padding-top: 6px;
+    }
+  }
+
+  .nota {
+    margin: 0;
+    max-width: 48em;
+  }
+  .piede-elenco {
+    display: flex;
+    justify-content: flex-end;
+  }
+</style>
+
+<script>
+  import * as accesso from "../lib/accesso";
+  import * as api from "../lib/api";
+  import { esc, formatData, formatIntervallo, nomeLeggibile } from "../lib/formato";
+  import { nomeFasciaKm } from "../lib/ipotesi";
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const marca = $<HTMLSelectElement>("f-marca");
+  const modello = $<HTMLSelectElement>("f-modello");
+  const allestimento = $<HTMLSelectElement>("f-allestimento");
+  const anno = $<HTMLSelectElement>("f-anno");
+  const costoDa = $<HTMLInputElement>("f-costo-da");
+  const costoA = $<HTMLInputElement>("f-costo-a");
+  const azzera = $<HTMLButtonElement>("f-azzera");
+  const stato = $("stato");
+  const errore = $("errore");
+  const vuota = $("vuota");
+  const tabella = $("tabella");
+  const righe = $("righe");
+  const nota = $("nota");
+  const piede = $("piede");
+  const filtriForm = $<HTMLFormElement>("filtri");
+
+  let haRicerche = false;   // l'utente ha almeno una ricerca, filtri a parte
+
+  const intero = (v: string) => (v === "" ? null : Number(v));
+
+  function filtri(): api.FiltriCronologia {
+    return {
+      marca: intero(marca.value),
+      modello: intero(modello.value),
+      allestimento: intero(allestimento.value),
+      anno: anno.value === "" ? null : anno.value === "new" ? "new" : Number(anno.value),
+      costoDa: costoDa.value === "" ? null : Math.max(0, Number(costoDa.value)),
+      costoA: costoA.value === "" ? null : Math.max(0, Number(costoA.value)),
+    };
+  }
+
+  const filtriAttivi = () => Object.values(filtri()).some((v) => v != null);
+
+  /** Riempie un menu tenendo la scelta, se c'è ancora fra le voci. */
+  function riempi(sel: HTMLSelectElement, tutte: string, voci: Array<[string, string]>) {
+    const prima = sel.value;
+    sel.innerHTML = `<option value="">${esc(tutte)}</option>` +
+      voci.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join("");
+    sel.value = voci.some(([v]) => v === prima) ? prima : "";
+  }
+
+  function renderFiltri(f: api.Cronologia["filtri"]) {
+    riempi(marca, "Tutte", f.marche.map((m) => [String(m.id), nomeLeggibile(m.name)]));
+    riempi(modello, "Tutti", f.modelli.map((m) => [String(m.id), nomeLeggibile(m.name)]));
+    riempi(allestimento, "Tutti", f.allestimenti.map((v) => [String(v.id), v.name]));
+    riempi(anno, "Tutti", f.anni.map((a) => (a === null ? ["new", "Nuova"] : [String(a), String(a)])));
+  }
+
+  function linkScheda(r: api.Ricerca): string {
+    const q = new URLSearchParams({ id: String(r.allestimento.id) });
+    if (r.anno !== null) q.set("year", String(r.anno));
+    if (r.km !== null) q.set("km", String(r.km));
+    return `/car?${q}`;
+  }
+
+  function riga(r: api.Ricerca): string {
+    const a = r.allestimento;
+    const costo = formatIntervallo(r.costo_annuo);
+    return `<tr>
+      <td class="auto"><a href="${esc(linkScheda(r))}">${esc(nomeLeggibile(a.marca))} ${esc(nomeLeggibile(a.modello))}</a>
+        <span class="versione">${esc(a.nome)}</span></td>
+      <td data-etichetta="Anno">${r.anno !== null ? esc(r.anno) : "Nuova"}</td>
+      <td data-etichetta="Chilometri">${r.km !== null ? esc(nomeFasciaKm(r.km)) : "Non indicati"}</td>
+      <td data-etichetta="Costo annuo" class="num cifra costo-cella${costo ? "" : " mancante"}">${costo ? `${esc(costo)} <span class="origine origine-calcolato">Calcolato</span>` : "Non ancora calcolato"}</td>
+      <td data-etichetta="Cercata il">${esc(formatData(r.cercata_il))}</td>
+      <td class="azioni-riga"><button type="button" class="btn-link" data-rimuovi="${r.id}"
+        aria-label="Rimuovi ${esc(nomeLeggibile(a.marca))} ${esc(nomeLeggibile(a.modello))} ${esc(a.nome)} dalla cronologia">Rimuovi</button></td>
+    </tr>`;
+  }
+
+  async function token(): Promise<string> {
+    const u = await accesso.attuale();
+    if (!u) throw new api.ErroreApi(401);
+    return u.token;
+  }
+
+  let turno = 0;   // filtri cambiati in fretta: vale solo l'ultima risposta
+  async function carica(rimettiFocus = false) {
+    const mio = ++turno;
+    const f = filtri();
+    if (f.costoDa != null && f.costoA != null && f.costoDa > f.costoA) {
+      stato.textContent = "Il costo \"da\" è più alto del costo \"a\".";
+      return;
+    }
+    stato.textContent = "Caricamento…";
+    errore.hidden = true;
+    let c: api.Cronologia;
+    try {
+      c = await api.cronologia(await token(), f);
+    } catch (e) {
+      if (mio !== turno) return;
+      if (e instanceof api.ErroreApi && e.status === 401) return accesso.vaiAdAccesso();   // sessione scaduta
+      console.error(e);
+      stato.textContent = "";
+      for (const el of [tabella, nota, vuota, piede]) el.hidden = true;
+      errore.hidden = false;
+      return;
+    }
+    if (mio !== turno) return;
+
+    renderFiltri(c.filtri);
+    haRicerche = c.filtri.marche.length > 0;
+    filtriForm.hidden = !haRicerche;
+    vuota.hidden = haRicerche;
+    piede.hidden = !haRicerche;
+    azzera.hidden = !filtriAttivi();
+
+    righe.innerHTML = c.righe.map(riga).join("");
+    tabella.hidden = c.righe.length === 0;
+    nota.hidden = c.righe.length === 0;
+    stato.textContent = !haRicerche ? ""
+      : c.righe.length === 0 ? "Nessuna ricerca con questi filtri."
+      : c.righe.length === 1 ? "1 ricerca" : `${c.righe.length} ricerche`;
+    // Dopo una rimozione il pulsante premuto non c'è più: il focus va al riepilogo.
+    if (rimettiFocus) (haRicerche ? stato : vuota.querySelector<HTMLElement>("a"))?.focus();
+  }
+
+  // ---------------------------------------------------------------- eventi
+
+  // Marca e modello restringono i menu successivi: la scelta a valle non vale più.
+  marca.addEventListener("change", () => {
+    modello.value = "";
+    allestimento.value = "";
+    carica();
+  });
+  modello.addEventListener("change", () => {
+    allestimento.value = "";
+    carica();
+  });
+  allestimento.addEventListener("change", () => carica());
+  anno.addEventListener("change", () => carica());
+
+  let attesaCosto: number | undefined;
+  for (const el of [costoDa, costoA]) {
+    el.addEventListener("input", () => {
+      clearTimeout(attesaCosto);
+      attesaCosto = window.setTimeout(() => carica(), 400);
+    });
+  }
+
+  azzera.addEventListener("click", () => {
+    for (const s of [marca, modello, allestimento, anno]) s.value = "";
+    costoDa.value = costoA.value = "";
+    carica();
+  });
+
+  $("riprova").addEventListener("click", () => carica());
+
+  righe.addEventListener("click", async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-rimuovi]");
+    if (!b) return;
+    b.disabled = true;
+    try {
+      await api.cancellaRicerca(await token(), Number(b.dataset.rimuovi));
+    } catch (err) {
+      // 404: già tolta (un'altra scheda del browser); si ricarica comunque
+      if (!(err instanceof api.ErroreApi && err.status === 404)) {
+        console.error(err);
+        b.disabled = false;
+        alert("Non riusciamo a rimuovere la ricerca. Controlla la connessione e riprova.");
+        return;
+      }
+    }
+    carica(true);
+  });
+
+  $("cancella-tutto").addEventListener("click", async () => {
+    if (!confirm("Cancellare tutta la cronologia delle ricerche?")) return;
+    try {
+      await api.cancellaCronologia(await token());
+    } catch (err) {
+      console.error(err);
+      alert("Non riusciamo a cancellare la cronologia. Controlla la connessione e riprova.");
+      return;
+    }
+    carica(true);
+  });
+
+  await accesso.accessoVerificato();
+  carica();
+</script>

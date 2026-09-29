@@ -306,3 +306,53 @@ async function conToken<T>(metodo: string, path: string, token: string, corpo?: 
 export const profilo = (token: string) => conToken<Profilo | null>("GET", "/profile", token);
 export const salvaProfilo = (token: string, p: Profilo) => conToken<Profilo>("PUT", "/profile", token, p);
 export const cancellaProfilo = (token: string) => conToken<null>("DELETE", "/profile", token);
+
+// ---------------------------------------------------------------- cronologia (utente registrato)
+// Il backend registra una riga per allestimento + anno + fascia di km ogni volta che l'utente
+// apre una scheda (POST /versions/{id}/report con il token), con il costo annuo di quel momento.
+
+export interface Ricerca {
+  id: number;
+  allestimento: { id: number; marca: string; modello: string; nome: string };
+  anno: number | null;           // null = auto nuova / anno non indicato
+  km: number | null;             // inizio della fascia; null = non indicati
+  /** Mantenimento annuo (assicurazione + bollo + tagliandi) calcolato dalla scheda; null se la
+   *  scheda non l'aveva ancora (stime non pronte, dati mancanti). */
+  costo_annuo: null | ({ origine: "calcolato" } & Intervallo);
+  cercata_il: string;
+}
+
+export interface FiltriCronologia {
+  marca?: number | null;
+  modello?: number | null;
+  allestimento?: number | null;
+  anno?: number | "new" | null;  // "new" = solo auto nuove
+  costoDa?: number | null;
+  costoA?: number | null;
+}
+
+export interface Cronologia {
+  righe: Ricerca[];
+  /** Le voci dei menu dei filtri, dalle ricerche dell'utente. anni: null = auto nuova. */
+  filtri: {
+    marche: Array<{ id: number; name: string }>;
+    modelli: Array<{ id: number; name: string }>;
+    allestimenti: Array<{ id: number; name: string }>;
+    anni: Array<number | null>;
+  };
+}
+
+export function cronologia(token: string, f: FiltriCronologia = {}): Promise<Cronologia> {
+  const q = new URLSearchParams();
+  const metti = (k: string, v: number | string | null | undefined) => { if (v != null) q.set(k, String(v)); };
+  metti("make", f.marca);
+  metti("model", f.modello);
+  metti("version", f.allestimento);
+  metti("year", f.anno);
+  metti("price_from", f.costoDa);
+  metti("price_to", f.costoA);
+  const qs = q.toString();
+  return conToken<Cronologia>("GET", `/history${qs ? `?${qs}` : ""}`, token);
+}
+export const cancellaRicerca = (token: string, id: number) => conToken<null>("DELETE", `/history/${id}`, token);
+export const cancellaCronologia = (token: string) => conToken<null>("DELETE", "/history", token);
