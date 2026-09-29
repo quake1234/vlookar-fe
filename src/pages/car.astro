@@ -13,6 +13,7 @@ import Base from "../layouts/Base.astro";
         <div class="testata-nome">
           <h1 id="titolo">Scheda auto</h1>
           <p id="sottotitolo" class="allestimento"></p>
+          <p id="creata" class="creata" hidden></p>
         </div>
         <section id="mantenimento" class="mantenimento" aria-labelledby="totale-nome" hidden>
           <h2 id="totale-nome" class="etichetta">Mantenimento annuo</h2>
@@ -145,6 +146,12 @@ import Base from "../layouts/Base.astro";
     margin: 10px 0 0;
     font-family: var(--mono);
     font-size: 1rem;
+  }
+  .creata {
+    margin: 6px 0 0;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--grafite);
   }
   .specifiche {
     display: grid;
@@ -974,6 +981,17 @@ import Base from "../layouts/Base.astro";
   // ---------------------------------------------------------------- caricamento
 
   let turnoCarica = 0;
+  // La data si decide sulla prima risposta: le ricariche della stessa visita trovano la riga appena
+  // creata, e non devono presentarla come una scheda già vista.
+  let creataDecisa = false;
+  function mostraCreata(s: Scheda) {
+    if (creataDecisa || !s.cronologia) return;
+    creataDecisa = true;
+    if (s.cronologia.nuova) return;
+    const el = $("creata");
+    el.innerHTML = `Scheda creata il <a href="/history">${esc(formatData(s.cronologia.creata_il))}</a>`;
+    el.hidden = false;
+  }
 
   // Stima generale, assicurazione e stima per km arrivano in parallelo, e ognuna ricarica la
   // scheda. Una richiesta partita dopo vede tutto ciò che hanno visto quelle partite prima: si
@@ -1025,6 +1043,7 @@ import Base from "../layouts/Base.astro";
       const s = await api.scheda(id, p);   // solo cache: risponde subito
       if (turno !== turnoCarica) return;
       mostrataRichiesta = n;
+      mostraCreata(s);
       render(s);
       completa(s.stima_da_calcolare, () => api.stima(id), (e) => (esitoStima = e), s, p, turno);
       completa(!!s.assicurazione?.da_calcolare, () => api.assicurazione(id, p), (e) => (esitoAssicurazione = e), s, p, turno);

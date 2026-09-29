@@ -172,6 +172,9 @@ export interface Scheda {
     da_calcolare: boolean;       // non ancora pronta: chiedere /usura
   };
   stima_da_calcolare: boolean;   // la stima generale non è ancora pronta: chiedere /stima
+  /** Solo con l'accesso: quando l'utente ha aperto per la prima volta questa scheda (allestimento,
+   *  anno e km), e se la riga di cronologia è nata con questa richiesta. */
+  cronologia?: { creata_il: string; nuova: boolean } | null;
 }
 
 export class ErroreApi extends Error {
