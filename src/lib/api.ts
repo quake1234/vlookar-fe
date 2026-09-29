@@ -188,10 +188,10 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 
 // I dati personali (data di nascita, classe di merito, indirizzo) vanno nel corpo di una POST,
 // mai nell'URL: gli URL finiscono nei log del server e della piattaforma che lo ospita.
-async function post<T>(path: string, corpo: object, signal?: AbortSignal): Promise<T> {
+async function post<T>(path: string, corpo: object, signal?: AbortSignal, token?: string | null): Promise<T> {
   const res = await fetch(API_URL + path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(corpo),
     signal,
   });
@@ -250,8 +250,19 @@ function corpo(p: ParametriScheda): Record<string, string | number> {
   return c;
 }
 
+// Token dell'utente che ha fatto accesso: lo imposta lib/ipotesi.ts. Con il token il backend
+// prende data di nascita, classe e via dal profilo e lega la stima dell'assicurazione all'utente:
+// nel corpo restano solo regione, anno e km.
+let tokenAttuale: () => Promise<string | null> = async () => null;
+export const usaToken = (fn: () => Promise<string | null>) => { tokenAttuale = fn; };
+
+async function conProfilo<T>(path: string, p: ParametriScheda): Promise<T> {
+  const token = await tokenAttuale();
+  return post<T>(path, token ? corpo({ regione: p.regione, anno: p.anno, km: p.km }) : corpo(p), undefined, token);
+}
+
 export const scheda = (id: number, p: ParametriScheda = {}) =>
-  post<Scheda>(`/versions/${id}/report`, corpo(p));
+  conProfilo<Scheda>(`/versions/${id}/report`, p);
 
 export type StatoStima = { stato: "pronta" | "limite" | "errore" };
 
@@ -260,7 +271,7 @@ export const stima = (id: number) => get<StatoStima>(`/versions/${id}/estimate`)
 
 /** Chiede la stima dell'assicurazione per classe e luogo; poi la scheda la contiene. */
 export const assicurazione = (id: number, p: ParametriScheda) =>
-  post<StatoStima>(`/versions/${id}/insurance`, corpo(p));
+  conProfilo<StatoStima>(`/versions/${id}/insurance`, p);
 
 /** Chiede la stima per anno e fascia di km; poi la scheda la contiene. */
 export const usura = (id: number, p: ParametriScheda) =>

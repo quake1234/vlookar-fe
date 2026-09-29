@@ -151,6 +151,9 @@ async function ricarica(u: accesso.Utente | null): Promise<void> {
   correnti = nuove;
 }
 
+// Scheda e assicurazione mandano il token: il backend usa il profilo dell'account.
+api.usaToken(async () => (await accesso.attuale())?.token ?? null);
+
 // Il modulo si importa anche durante la build (REGIONI, CLASSI): lì niente accesso né storage.
 const nelBrowser = typeof window !== "undefined";
 const pronte = nelBrowser
