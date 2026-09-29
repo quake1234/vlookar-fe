@@ -17,6 +17,9 @@ l'API REST del backend (`/docs`).
 - Tutte le chiamate al backend passano da `src/lib/api.ts`; quelle a Supabase Auth (accesso,
   pagina `/login`) solo da `src/lib/accesso.ts`. Chi ha fatto accesso ha i dati nel profilo del
   backend (`/profile`), non nel localStorage.
+- **Accesso obbligatorio**: ogni pagina usa `layouts/Base.astro`, che senza accesso porta a
+  `/login`; solo `/login` passa `pubblica`. Chi carica dati li chiede dopo
+  `ipotesi.attendi()` (o `accesso.accessoVerificato()`), mai prima.
 - **Tutti gli URL sono in inglese**: pagine (`/car`, `/login`), parametri (`?id=`, `?year=`,
   `?km=`, `?mode=`, `?next=`) e endpoint del backend. Testi e codice restano in italiano.
 

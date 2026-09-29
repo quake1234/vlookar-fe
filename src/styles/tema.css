@@ -80,6 +80,8 @@
 [hidden] { display: none !important; }
 
 html { -webkit-text-size-adjust: 100%; }
+/* Pagina protetta: nascosta finché non si sa se l'utente ha fatto accesso (layouts/Base.astro). */
+html.in-verifica body { visibility: hidden; }
 
 body {
   margin: 0;

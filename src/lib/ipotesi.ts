@@ -153,7 +153,9 @@ async function ricarica(u: accesso.Utente | null): Promise<void> {
 
 // Il modulo si importa anche durante la build (REGIONI, CLASSI): lì niente accesso né storage.
 const nelBrowser = typeof window !== "undefined";
-const pronte = nelBrowser ? accesso.attuale().then(ricarica) : Promise.resolve();
+const pronte = nelBrowser
+  ? accesso.accessoVerificato().then(accesso.attuale).then(ricarica)
+  : Promise.resolve();
 
 /** Da attendere prima della prima leggi(): con l'accesso i dati arrivano dal backend. */
 export const attendi = (): Promise<void> => pronte;

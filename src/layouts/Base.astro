@@ -7,13 +7,15 @@ interface Props {
   title: string;
   description?: string;
   legenda?: boolean;   // la home la mostra già nel corpo della pagina
+  pubblica?: boolean;  // visibile senza accesso: solo /login
 }
 
-const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazione, bollo e problemi tipici.", legenda = true } = Astro.props;
+const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazione, bollo e problemi tipici.", legenda = true, pubblica = false } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="it">
+<!-- Senza accesso la pagina resta nascosta finché lib/accesso.ts non ha controllato la sessione. -->
+<html lang="it" data-accesso={pubblica ? "libero" : "obbligatorio"} class={pubblica ? undefined : "in-verifica"}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -53,6 +55,14 @@ const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazion
     <DatiUtente />
   </body>
 </html>
+
+<script>
+  import * as accesso from "../lib/accesso";
+
+  accesso.sorvegliaUscita();
+  accesso.accessoVerificato().then(() => document.documentElement.classList.remove("in-verifica"));
+</script>
+
 
 <style>
   .barra {

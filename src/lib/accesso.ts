@@ -113,6 +113,35 @@ export async function esci(): Promise<void> {
   await supabase?.auth.signOut();
 }
 
+// ---------------------------------------------------------------- accesso obbligatorio
+// Decisione dell'utente del 2026-09-29: senza accesso non si usa il sito. Ogni pagina lo chiede
+// (layouts/Base.astro, <html data-accesso="obbligatorio">) tranne /login. Finché l'accesso non è
+// configurato (disponibile = false) il sito resta aperto: altrimenti nessuno potrebbe entrare.
+
+const obbligatorio = () => document.documentElement.dataset.accesso === "obbligatorio";
+
+function vaiAlLogin(): void {
+  location.replace(`/login?${new URLSearchParams({ next: location.pathname + location.search })}`);
+}
+
+let controllo: Promise<void> | null = null;
+
+/** Si risolve se l'utente può vedere la pagina. Altrimenti lo porta a /login e non si risolve
+ *  mai: chi la aspetta (ipotesi.attendi(), la scheda) non carica dati né chiama il backend. */
+export function accessoVerificato(): Promise<void> {
+  return (controllo ??= (async () => {
+    if (!supabase || !obbligatorio()) return;
+    if (await attuale()) return;
+    vaiAlLogin();
+    await new Promise<never>(() => {});
+  })());
+}
+
+/** Uscita (anche da un'altra scheda del browser) su una pagina protetta: di nuovo al login. */
+export function sorvegliaUscita(): void {
+  if (supabase && obbligatorio()) suCambio((u) => { if (!u) vaiAlLogin(); });
+}
+
 // ---------------------------------------------------------------- pagina di accesso
 
 export type Modo = "login" | "signup" | "reset" | "new-password";
