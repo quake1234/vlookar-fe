@@ -1,0 +1,281 @@
+---
+// Mini-gioco: un giro di pista col mouse (o col dito, senza staccarlo), senza uscire dal tracciato.
+// Serve un puntatore: da tastiera non si gioca. Tutto nel
+// browser: nessuna chiamata al backend. Il record resta solo in questo browser.
+import Base from "../layouts/Base.astro";
+
+// Tracciato ispirato a Vallelunga (semplificato, senza il tornante della 12): curva chiusa che
+// parte dal traguardo e gira come la pista vera.
+const PISTA = "M 249 161 C 275.7 157.3 305.5 151.8 330 146 C 354.5 140.2 371.0 136.2 396 126 C 421.0 115.8 452.7 97.7 480 85 C 507.3 72.3 538.0 54.2 560 50 C 582.0 45.8 585.0 50.3 612 60 C 639.0 69.7 680.7 94.7 722 108 C 763.3 121.3 821.2 131.3 860 140 C 898.8 148.7 935.7 149.2 955 160 C 974.3 170.8 977.7 188.0 976 205 C 974.3 222.0 972.0 249.3 945 262 C 918.0 274.7 871.5 266.0 814 281 C 756.5 296.0 669.0 328.0 600 352 C 531.0 376.0 442.0 416.2 400 425 C 358.0 433.8 353.8 414.2 348 405 C 342.2 395.8 343.0 382.5 365 370 C 387.0 357.5 442.2 343.7 480 330 C 517.8 316.3 575.0 303.0 592 288 C 609.0 273.0 594.8 253.3 582 240 C 569.2 226.7 541.2 208.7 515 208 C 488.8 207.3 457.5 230.3 425 236 C 392.5 241.7 342.8 248.3 320 242 C 297.2 235.7 299.0 199.0 288 198 C 277.0 197.0 272.0 227.3 254 236 C 236.0 244.7 208.7 248.5 180 250 C 151.3 251.5 104.3 251.3 82 245 C 59.7 238.7 47.0 222.8 46 212 C 45.0 201.2 55.3 187.3 76 180 C 96.7 172.7 141.2 171.2 170 168 C 198.8 164.8 222.3 164.7 249 161 Z";
+const LARGHEZZA = 26;
+---
+
+<Base title="Giro di pista — Vroomy" legenda={false}>
+  <div class="wrap gioco">
+    <header class="testa">
+      <h1>Giro di pista</h1>
+      <p>Un giro del tracciato ispirato a Vallelunga nel minor tempo possibile. Premi sul VIA, poi segui la pista col mouse nel verso della freccia (sul telefono col dito, senza mai staccarlo): se tocchi il bordo sei fuori.</p>
+    </header>
+
+    <div class="cronometro" aria-live="polite">
+      <div><span class="etichetta">Tempo</span><span id="tempo" class="cifra tempo">0:00.00</span></div>
+      <div><span class="etichetta">Giro</span><span id="giro" class="cifra">0%</span></div>
+      <div><span class="etichetta">Il tuo record</span><span id="record" class="cifra">—</span></div>
+    </div>
+
+    <div class="tracciato">
+      <svg id="pista" viewBox="0 0 1020 470" role="img" aria-label="Tracciato ispirato a Vallelunga">
+        <path d={PISTA} class="cordolo" stroke-width={LARGHEZZA + 8} />
+        <path d={PISTA} class="asfalto" stroke-width={LARGHEZZA} />
+        <path d={PISTA} class="mezzeria" />
+        <!-- la pista vera per il controllo: stessa larghezza dell'asfalto, invisibile -->
+        <path id="percorso" d={PISTA} class="percorso" stroke-width={LARGHEZZA} />
+        <line id="traguardo" class="traguardo" stroke-width="6" />
+        <path id="freccia" class="freccia" d="M -9 -7 L 5 0 L -9 7" />
+        <g id="via" class="via">
+          <circle r={LARGHEZZA / 2} />
+          <text dy="1">VIA</text>
+        </g>
+      </svg>
+      <div id="messaggio" class="messaggio" role="status" aria-live="assertive" hidden>
+        <p id="messaggio-testo"></p>
+        <button id="riprova" class="btn" type="button">Riprova</button>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .gioco {
+    padding-top: 28px;
+    display: grid;
+    gap: 18px;
+  }
+  .testa h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+  }
+  .testa p {
+    margin: 8px 0 0;
+    max-width: 60ch;
+    color: var(--grafite);
+  }
+  .cronometro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 40px;
+  }
+  .cronometro div {
+    display: grid;
+    gap: 2px;
+  }
+  .cronometro .cifra {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .tempo {
+    color: var(--segnale);
+  }
+
+  .tracciato {
+    position: relative;
+    border: 1px solid var(--inchiostro);
+    background: #3f5a3a;   /* prato */
+    touch-action: none;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: url("/cursore/auto.svg") 14 14, crosshair;
+    user-select: none;
+  }
+  .cordolo {
+    fill: none;
+    stroke: #d6d3cc;
+    stroke-dasharray: 10 10;
+  }
+  .asfalto {
+    fill: none;
+    stroke: #2c2f33;
+    stroke-linejoin: round;
+  }
+  .mezzeria {
+    fill: none;
+    stroke: #5a5e64;
+    stroke-width: 1;
+    stroke-dasharray: 8 10;
+  }
+  .percorso {
+    fill: none;
+    stroke: transparent;
+    pointer-events: none;
+  }
+  .traguardo {
+    stroke: #fff;
+    stroke-dasharray: 4 4;
+  }
+  .freccia {
+    fill: none;
+    stroke: var(--segnale);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .via {
+    cursor: url("/cursore/auto-anabbaglianti.svg") 14 14, pointer;
+  }
+  .via circle {
+    fill: #2e9d4f;
+    stroke: #fff;
+    stroke-width: 2;
+  }
+  .via text {
+    fill: #fff;
+    font: 700 11px var(--font);
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+  :global(.in-corsa) .via {
+    display: none;
+  }
+  .messaggio {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    background: rgb(0 0 0 / 0.55);
+    color: #fff;
+    text-align: center;
+  }
+  .messaggio[hidden] {
+    display: none;
+  }
+  .messaggio p {
+    margin: 0;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-weight: 700;
+  }
+</style>
+
+<script>
+  // Stati: pronto → corsa → fuori (bordo toccato) | arrivo (giro completo).
+  const svg = document.getElementById("pista") as unknown as SVGSVGElement;
+  const percorso = document.getElementById("percorso") as unknown as SVGPathElement;
+  const via = document.getElementById("via") as unknown as SVGGElement;
+  const tempoEl = document.getElementById("tempo")!;
+  const giroEl = document.getElementById("giro")!;
+  const recordEl = document.getElementById("record")!;
+  const messaggio = document.getElementById("messaggio")!;
+  const messaggioTesto = document.getElementById("messaggio-testo")!;
+  const LARGHEZZA = Number(percorso.getAttribute("stroke-width"));
+
+  // Controlli lungo la pista: vanno toccati in ordine, così non si taglia e non si gira al contrario.
+  const lunghezza = percorso.getTotalLength();
+  const CONTROLLI = 80;
+  const controlli = Array.from({ length: CONTROLLI }, (_, i) => percorso.getPointAtLength((lunghezza * (i + 1)) / CONTROLLI));
+  const partenza = percorso.getPointAtLength(0);
+
+  // Traguardo, VIA e freccia del verso, dalla direzione della pista alla partenza.
+  const avanti = percorso.getPointAtLength(12);
+  const ang = Math.atan2(avanti.y - partenza.y, avanti.x - partenza.x);
+  const nx = -Math.sin(ang), ny = Math.cos(ang), mezzo = LARGHEZZA / 2 + 4;
+  const traguardo = document.getElementById("traguardo")!;
+  traguardo.setAttribute("x1", String(partenza.x + nx * mezzo));
+  traguardo.setAttribute("y1", String(partenza.y + ny * mezzo));
+  traguardo.setAttribute("x2", String(partenza.x - nx * mezzo));
+  traguardo.setAttribute("y2", String(partenza.y - ny * mezzo));
+  via.setAttribute("transform", `translate(${partenza.x} ${partenza.y})`);
+  const puntaFreccia = percorso.getPointAtLength(60);
+  document.getElementById("freccia")!.setAttribute("transform", `translate(${puntaFreccia.x} ${puntaFreccia.y}) rotate(${(ang * 180) / Math.PI})`);
+
+  type Stato = "pronto" | "corsa" | "fuori" | "arrivo";
+  let stato: Stato = "pronto";
+  let inizio = 0;
+  let prossimo = 0;
+  let ultimo: DOMPoint | null = null;
+
+  const RECORD = "vroomy.gioco.record";
+  const leggiRecord = () => { try { return Number(localStorage.getItem(RECORD)) || null; } catch { return null; } };
+  const salvaRecord = (ms: number) => { try { localStorage.setItem(RECORD, String(ms)); } catch { /* solo per questa visita */ } };
+  const tempo = (ms: number) => {
+    const c = Math.round(ms / 10);   // centesimi: si arrotonda prima, così 59,996 s non diventa "0:60.00"
+    const min = Math.floor(c / 6000), sec = Math.floor((c % 6000) / 100), cent = c % 100;
+    return `${min}:${String(sec).padStart(2, "0")}.${String(cent).padStart(2, "0")}`;
+  };
+  const mostraRecord = () => { const r = leggiRecord(); recordEl.textContent = r ? tempo(r) : "—"; };
+  mostraRecord();
+
+  function inSvg(e: PointerEvent): DOMPoint {
+    const p = new DOMPoint(e.clientX, e.clientY);
+    return p.matrixTransform(svg.getScreenCTM()!.inverse());
+  }
+
+  const dentro = (p: DOMPoint) => percorso.isPointInStroke(p);
+
+  /** Distanza fra un punto e il segmento a–b: un movimento veloce non salta i controlli. */
+  function distanza(c: DOMPoint, a: DOMPoint, b: DOMPoint) {
+    const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy;
+    const t = l ? Math.max(0, Math.min(1, ((c.x - a.x) * dx + (c.y - a.y) * dy) / l)) : 0;
+    return Math.hypot(a.x + t * dx - c.x, a.y + t * dy - c.y);
+  }
+
+  function parti() {
+    if (stato === "corsa") return;
+    stato = "corsa";
+    inizio = performance.now();
+    prossimo = 0;
+    ultimo = new DOMPoint(partenza.x, partenza.y);
+    messaggio.hidden = true;
+    document.documentElement.classList.add("in-corsa");
+    requestAnimationFrame(cronometra);
+  }
+
+  function fine(esito: "fuori" | "arrivo") {
+    stato = esito;
+    document.documentElement.classList.remove("in-corsa");
+    const ms = performance.now() - inizio;
+    if (esito === "arrivo") {
+      tempoEl.textContent = tempo(ms);
+      const r = leggiRecord();
+      const nuovo = !r || ms < r;
+      if (nuovo) salvaRecord(ms);
+      mostraRecord();
+      messaggioTesto.textContent = nuovo ? `Nuovo record: ${tempo(ms)}` : `Giro in ${tempo(ms)}`;
+    } else {
+      messaggioTesto.textContent = "Hai toccato il bordo: sei fuori pista.";
+    }
+    messaggio.hidden = false;
+  }
+
+  function cronometra() {
+    if (stato !== "corsa") return;
+    tempoEl.textContent = tempo(performance.now() - inizio);
+    requestAnimationFrame(cronometra);
+  }
+
+  svg.addEventListener("pointermove", (e) => {
+    if (stato !== "corsa" || !ultimo) return;
+    const p = inSvg(e);
+    // anche i punti fra l'ultima posizione e questa: un gesto veloce non attraversa il prato
+    const passi = Math.ceil(Math.hypot(p.x - ultimo.x, p.y - ultimo.y) / (LARGHEZZA / 4));
+    for (let i = 1; i <= passi; i++) {
+      const q = new DOMPoint(ultimo.x + ((p.x - ultimo.x) * i) / passi, ultimo.y + ((p.y - ultimo.y) * i) / passi);
+      if (!dentro(q)) return fine("fuori");
+    }
+    while (prossimo < CONTROLLI && distanza(controlli[prossimo], ultimo, p) < LARGHEZZA * 0.75) prossimo++;
+    ultimo = p;
+    giroEl.textContent = `${Math.floor((prossimo / CONTROLLI) * 100)}%`;
+    if (prossimo === CONTROLLI) fine("arrivo");
+  });
+  svg.addEventListener("pointerleave", () => { if (stato === "corsa") fine("fuori"); });
+
+  via.addEventListener("pointerdown", (e) => { e.preventDefault(); svg.setPointerCapture?.(e.pointerId); parti(); });
+  document.getElementById("riprova")!.addEventListener("click", () => {
+    stato = "pronto";
+    messaggio.hidden = true;
+    tempoEl.textContent = tempo(0);
+    giroEl.textContent = "0%";
+  });
+</script>
