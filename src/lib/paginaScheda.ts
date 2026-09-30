@@ -193,7 +193,10 @@ function renderQuadrante(q: Scheda["mantenimento"]["quadrante"]) {
   if (q) {
     scala.style.setProperty("--min", String(q.min_pct));
     scala.style.setProperty("--max", String(q.max_pct));
+    // la lancetta parte con l'accelerazione solo all'arrivo della scala, non a ogni ridisegno
+    scala.classList.add("pronta");
   } else {
+    scala.classList.remove("pronta");
     scala.style.removeProperty("--min");
     scala.style.removeProperty("--max");
   }

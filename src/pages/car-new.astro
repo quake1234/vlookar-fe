@@ -343,13 +343,17 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
   .arco-rosso {
     stroke: var(--fuorigiri);
   }
-  /* La lancetta oscilla fra il minimo e il massimo del mantenimento, come un motore al minimo.
-     --min e --max sono le posizioni in percentuale del fondo scala, calcolate dal backend
-     (mantenimento.quadrante); qui si trasformano in un angolo del disegno (135° + 270° × pct).
-     Senza dati: fra la terza e la quinta tacca lunga. */
+  /* La lancetta. --min e --max sono le posizioni del mantenimento in percentuale del fondo
+     scala, calcolate dal backend (mantenimento.quadrante); qui diventano un angolo del disegno
+     (135° + 2,7° per punto). Una tacca piccola vale 2,5 punti, una lunga 12,5.
+     - in attesa dei dati: accensione, dalla prima tacca lunga (135°) alla seconda (168,75°), poi
+       oscillazione veloce fra la seconda e le due tacche piccole prima (155,25°);
+     - con i dati (classe .pronta, da lib/paginaScheda.ts): accelerazione fino al massimo, discesa
+       più lenta al minimo, 3 s al minimo oscillando fino a due tacche piccole sopra, e di nuovo;
+     - senza dati e senza attesa: ferma sulla prima tacca. */
   .scala {
-    --min: 25;
-    --max: 50;
+    --min: 0;
+    --max: 0;
   }
   .cifra-scala {
     font-family: var(--condensato);
@@ -365,42 +369,44 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     filter: drop-shadow(0 0 3px rgb(229 57 47 / 0.6));
     transform-box: view-box;
     transform-origin: 100px 100px;
-    transform: rotate(calc(135deg + 2.7deg * (var(--min) + var(--max)) / 2));
-  }
-  .quadrante:has(.totale.in-attesa) .lancetta {
     transform: rotate(135deg);
   }
+  .scala.pronta .lancetta {
+    transform: rotate(calc(135deg + 2.7deg * (var(--min) + var(--max)) / 2));
+  }
   @media (prefers-reduced-motion: no-preference) {
-    .lancetta {
-      animation: giri 6s ease-in-out infinite;
-    }
-    /* Accensione, mentre si aspettano i dati: 3 s di oscillazione fra la prima tacca lunga (135°)
-       e la seconda (168,75°), poi 3 s ferma sulla prima; e si ricomincia finché i dati non arrivano. */
     .quadrante:has(.totale.in-attesa) .lancetta {
-      animation: accensione 6s ease-in-out infinite;
+      animation: avvio 0.5s cubic-bezier(0.5, 0, 0.7, 1) both, battito 0.28s ease-in-out 0.5s infinite alternate;
     }
-    @keyframes accensione {
-      0% { transform: rotate(135deg); }
-      7% { transform: rotate(162deg); }
-      13% { transform: rotate(142deg); }
-      21% { transform: rotate(168deg); }
-      29% { transform: rotate(146deg); }
-      37% { transform: rotate(165deg); }
-      44% { transform: rotate(139deg); }
-      50%, 100% { transform: rotate(135deg); }
+    @keyframes avvio {
+      from { transform: rotate(135deg); }
+      to { transform: rotate(168.75deg); }
+    }
+    @keyframes battito {
+      from { transform: rotate(168.75deg); }
+      to { transform: rotate(155.25deg); }
+    }
+
+    /* prima volta: dalla posizione dell'accensione su fino al massimo, poi giù al minimo;
+       poi il ciclo: 3 s al minimo, accelerazione, discesa */
+    .scala.pronta .lancetta {
+      animation: partenza 3s both, giri 6.2s 3s infinite;
+    }
+    @keyframes partenza {
+      0% { transform: rotate(160deg); animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+      36% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: cubic-bezier(0.3, 0.1, 0.4, 1); }
+      100% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0))); }
     }
     @keyframes giri {
-      0% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.05))); }
-      10% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.59))); }
-      18% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.32))); }
-      30% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.94))); }
-      38% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.67))); }
-      50% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 1))); }
-      62% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.2))); }
-      72% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.53))); }
-      84% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0))); }
-      92% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.26))); }
-      100% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.05))); }
+      0% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0))); animation-timing-function: ease-in-out; }
+      8% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 5))); animation-timing-function: ease-in-out; }
+      16% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 1))); animation-timing-function: ease-in-out; }
+      24% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 4.5))); animation-timing-function: ease-in-out; }
+      32% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0.5))); animation-timing-function: ease-in-out; }
+      40% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 5))); animation-timing-function: ease-in-out; }
+      48% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0))); animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
+      67% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: cubic-bezier(0.3, 0.1, 0.4, 1); }
+      100% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0))); }
     }
   }
   .totale {
