@@ -32,6 +32,14 @@ const LARGHEZZA = 26;
         <path id="percorso" d={PISTA} class="percorso" stroke-width={LARGHEZZA} />
         <line id="traguardo" class="traguardo" stroke-width="6" />
         <path id="freccia" class="freccia" d="M -9 -7 L 5 0 L -9 7" />
+        <!-- l'auto durante la corsa: al posto del cursore, girata nel verso di marcia (muso verso +x) -->
+        <g id="auto" class="auto" aria-hidden="true">
+          <rect x="-11" y="-6.5" width="22" height="13" rx="4" class="auto-scocca" />
+          <rect x="1.5" y="-5" width="4.5" height="10" rx="1.5" class="auto-vetro" />
+          <rect x="-8.5" y="-4.5" width="3" height="9" rx="1" class="auto-vetro" />
+          <rect x="9.3" y="-5.3" width="1.8" height="3" rx="0.9" class="auto-faro" />
+          <rect x="9.3" y="2.3" width="1.8" height="3" rx="0.9" class="auto-faro" />
+        </g>
         <g id="via" class="via">
           <circle r={LARGHEZZA / 2} />
           <text dy="1">VIA</text>
@@ -138,6 +146,28 @@ const LARGHEZZA = 26;
   :global(.in-corsa) .via {
     display: none;
   }
+  /* in corsa il cursore sparisce: c'è l'auto disegnata sulla pista */
+  :global(.in-corsa) svg {
+    cursor: none;
+  }
+  .auto {
+    display: none;
+    pointer-events: none;
+  }
+  .auto.visibile {
+    display: inline;
+  }
+  .auto-scocca {
+    fill: #e6e4df;
+    stroke: #111315;
+    stroke-width: 1;
+  }
+  .auto-vetro {
+    fill: #2b3036;
+  }
+  .auto-faro {
+    fill: #ffe39a;
+  }
   .messaggio {
     position: absolute;
     inset: 0;
@@ -190,6 +220,22 @@ const LARGHEZZA = 26;
   const puntaFreccia = percorso.getPointAtLength(60);
   document.getElementById("freccia")!.setAttribute("transform", `translate(${puntaFreccia.x} ${puntaFreccia.y}) rotate(${(ang * 180) / Math.PI})`);
 
+  // Verso di marcia della pista a ogni controllo, per girare l'auto.
+  const versi = controlli.map((_, i) => {
+    const l = (lunghezza * (i + 0.5)) / CONTROLLI;
+    const a = percorso.getPointAtLength(Math.max(0, l - 4)), b = percorso.getPointAtLength(Math.min(lunghezza, l + 4));
+    return Math.atan2(b.y - a.y, b.x - a.x);
+  });
+  const auto = document.getElementById("auto")!;
+  let angoloAuto = ang;
+  /** Mette l'auto nel punto p, girandola piano verso il verso di marcia del tratto (niente scatti). */
+  function muoviAuto(p: { x: number; y: number }, verso: number) {
+    let d = verso - angoloAuto;
+    d = Math.atan2(Math.sin(d), Math.cos(d));   // la via più corta
+    angoloAuto += d * 0.35;
+    auto.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(${(angoloAuto * 180) / Math.PI})`);
+  }
+
   type Stato = "pronto" | "corsa" | "fuori" | "arrivo";
   let stato: Stato = "pronto";
   let inizio = 0;
@@ -228,6 +274,9 @@ const LARGHEZZA = 26;
     prossimo = 0;
     ultimo = new DOMPoint(partenza.x, partenza.y);
     messaggio.hidden = true;
+    angoloAuto = ang;
+    muoviAuto(partenza, ang);
+    auto.classList.add("visibile");
     document.documentElement.classList.add("in-corsa");
     requestAnimationFrame(cronometra);
   }
@@ -266,6 +315,7 @@ const LARGHEZZA = 26;
     }
     while (prossimo < CONTROLLI && distanza(controlli[prossimo], ultimo, p) < LARGHEZZA * 0.75) prossimo++;
     ultimo = p;
+    muoviAuto(p, versi[Math.min(prossimo, CONTROLLI - 1)]);
     giroEl.textContent = `${Math.floor((prossimo / CONTROLLI) * 100)}%`;
     if (prossimo === CONTROLLI) fine("arrivo");
   });
@@ -274,6 +324,7 @@ const LARGHEZZA = 26;
   via.addEventListener("pointerdown", (e) => { e.preventDefault(); svg.setPointerCapture?.(e.pointerId); parti(); });
   document.getElementById("riprova")!.addEventListener("click", () => {
     stato = "pronto";
+    auto.classList.remove("visibile");
     messaggio.hidden = true;
     tempoEl.textContent = tempo(0);
     giroEl.textContent = "0%";
