@@ -348,7 +348,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
      (135° + 2,7° per punto). Una tacca piccola vale 2,5 punti, una lunga 12,5.
      - in attesa dei dati: accensione, dalla prima tacca lunga (135°) alla seconda (168,75°), poi
        oscillazione veloce fra la seconda e le due tacche piccole prima (155,25°);
-     - con i dati (classe .pronta, da lib/paginaScheda.ts): accelerazione fino al massimo, 2 s lì,
+     - con i dati (classe .pronta, da lib/paginaScheda.ts): accelerazione fino al massimo, 2 s lì vibrando,
        discesa più lenta al minimo, 3 s al minimo oscillando fino a due tacche piccole sopra, e di nuovo;
      - senza dati e senza attesa: ferma sulla prima tacca. */
   .scala {
@@ -388,13 +388,35 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     }
 
     /* prima volta: dalla posizione dell'accensione su fino al massimo, 2 s lì, poi giù al minimo;
-       poi il ciclo: 3 s al minimo, accelerazione (1,2 s), 2 s al massimo, discesa (2 s) */
+       poi il ciclo: 3 s al minimo, accelerazione (1,2 s), 2 s al massimo, discesa (2 s).
+       Al massimo la lancetta vibra veloce fra il massimo e la tacca piccola prima (2,5 punti),
+       un colpo ogni decimo di secondo. */
     .scala.pronta .lancetta {
       animation: partenza 5s both, giri 8.2s 5s infinite;
     }
     @keyframes partenza {
       0% { transform: rotate(160deg); animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
-      22%, 62% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: cubic-bezier(0.3, 0.1, 0.4, 1); }
+      22.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      24.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      26.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      28.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      30.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      32.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      34.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      36.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      38.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      40.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      42.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      44.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      46.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      48.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      50.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      52.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      54.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      56.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      58.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      60.00% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      62.00% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: cubic-bezier(0.3, 0.1, 0.4, 1); }
       100% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0))); }
     }
     @keyframes giri {
@@ -405,7 +427,27 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
       24.4% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0.5))); animation-timing-function: ease-in-out; }
       30.5% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 5))); animation-timing-function: ease-in-out; }
       36.6% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0))); animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.55); }
-      51.2%, 75.6% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: cubic-bezier(0.3, 0.1, 0.4, 1); }
+      51.22% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      52.44% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      53.66% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      54.88% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      56.10% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      57.32% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      58.54% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      59.76% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      60.98% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      62.20% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      63.41% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      64.63% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      65.85% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      67.07% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      68.29% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      69.51% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      70.73% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      71.95% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      73.17% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: ease-in-out; }
+      74.39% { transform: rotate(calc(135deg + 2.7deg * (var(--max) - 2.5))); animation-timing-function: ease-in-out; }
+      75.61% { transform: rotate(calc(135deg + 2.7deg * var(--max))); animation-timing-function: cubic-bezier(0.3, 0.1, 0.4, 1); }
       100% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + 0))); }
     }
   }
