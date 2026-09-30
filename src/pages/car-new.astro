@@ -48,6 +48,16 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
       </div>
     </header>
 
+    <!-- i dati dell'auto, in fila come il computer di bordo -->
+    <dl id="specifiche" class="specifiche" hidden></dl>
+
+    <!-- i dati con cui sono calcolati i costi: si cambiano dal form, non qui -->
+    <div id="profilo" class="profilo" hidden>
+      <p class="profilo-titolo">Calcolato per</p>
+      <dl id="profilo-dati" class="profilo-dati"></dl>
+      <button id="modifica" class="btn btn-secondario" type="button">Modifica i tuoi dati</button>
+    </div>
+
     <div id="servono-dati" class="avviso avviso-azione" hidden>
       <p>Per calcolare bollo e assicurazione servono la tua regione e, se vuoi una stima su misura, età, classe di merito e via.</p>
       <button id="inserisci-dati" class="btn" type="button">Inserisci i dati</button>
@@ -121,16 +131,6 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
           </article>
         </section>
       </div>
-    </div>
-
-    <!-- i dati dell'auto, in fila come il computer di bordo -->
-    <dl id="specifiche" class="specifiche" hidden></dl>
-
-    <!-- i dati con cui sono calcolati i costi: si cambiano dal form, non qui -->
-    <div id="profilo" class="profilo" hidden>
-      <p class="profilo-titolo">Calcolato per</p>
-      <dl id="profilo-dati" class="profilo-dati"></dl>
-      <button id="modifica" class="btn btn-secondario" type="button">Modifica i tuoi dati</button>
     </div>
 
     <!-- nome e versione in piccolo, fissi in alto quando la testata esce dallo schermo -->
@@ -286,7 +286,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
   .plancia:has(> :not([hidden])) {
     background: var(--pannello);
     border: 1px solid var(--filo);
-    border-radius: 14px 14px 6px 6px;
+    border-radius: 14px;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 20px 40px -24px rgb(0 0 0 / 0.8);
   }
   @media (min-width: 1000px) {
@@ -619,8 +619,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     margin: 0;
     background: var(--carta-2);
     border: 1px solid var(--filo);
-    border-top: 0;
-    border-radius: 0 0 6px 6px;
+    border-radius: 6px;
   }
   .specifiche :global(div) {
     padding: 14px 20px;
@@ -658,6 +657,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     align-items: center;
     gap: 12px 28px;
     padding: 18px 0;
+    margin-bottom: 24px;
     border-bottom: 1px solid var(--filo);
   }
   .profilo-titolo {
