@@ -1,0 +1,758 @@
+---
+// La scheda con la grafica "cruscotto": stessi dati e stessa logica di /car (lib/paginaScheda.ts),
+// cambia solo l'aspetto. Tema scuro, cifre condensate, un solo colore di segnale (ambra).
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Scheda auto — Vroomy">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" />
+
+  <div class="wrap cruscotto">
+    <nav class="briciole" aria-label="Percorso">
+      <a href="/">Auto</a><span aria-hidden="true">›</span><span id="bc-marca">…</span><span aria-hidden="true">›</span><span id="bc-modello">…</span>
+    </nav>
+
+    <header class="testata">
+      <div class="testata-nome">
+        <h1 id="titolo">Scheda auto</h1>
+        <p id="sottotitolo" class="allestimento"></p>
+        <p id="creata" class="creata" hidden></p>
+      </div>
+      <dl class="spie-legenda" aria-label="Da dove vengono i numeri">
+        <div><dt><span class="origine origine-ufficiale">Dato ufficiale</span></dt></div>
+        <div><dt><span class="origine origine-calcolato">Calcolato</span></dt></div>
+        <div><dt><span class="origine origine-stima_llm">Stima AI</span></dt></div>
+      </dl>
+    </header>
+
+    <div id="servono-dati" class="avviso avviso-azione" hidden>
+      <p>Per calcolare bollo e assicurazione servono la tua regione e, se vuoi una stima su misura, età, classe di merito e via.</p>
+      <button id="inserisci-dati" class="btn" type="button">Inserisci i dati</button>
+    </div>
+
+    <div id="attesa" class="attesa" role="status" aria-live="polite" hidden>
+      <span class="attesa-barra" aria-hidden="true"></span>
+      <p><strong>Stiamo stimando prezzo, assicurazione, tagliando e problemi tipici.</strong> La prima volta che qualcuno cerca quest'auto può volerci fino a un minuto; intanto qui sotto trovi i dati già pronti.</p>
+    </div>
+
+    <div id="errore" class="avviso avviso-azione" role="alert" hidden></div>
+    <div id="senza-stima" class="avviso avviso-azione" hidden></div>
+
+    <div class="plancia">
+      <!-- il quadrante: il totale annuo, due cifre della stessa misura -->
+      <section id="mantenimento" class="quadro mantenimento" aria-labelledby="totale-nome" hidden>
+        <h2 id="totale-nome" class="quadro-titolo">Mantenimento annuo</h2>
+        <div class="quadrante">
+          <div id="totale" class="totale" aria-live="polite">
+            <p class="totale-riga"><span class="totale-da">da</span><span id="tot-min" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
+            <p class="totale-riga"><span class="totale-da">a</span><span id="tot-max" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
+            <p class="totale-unita">all'anno</p>
+          </div>
+        </div>
+        <p id="totale-stato" class="totale-stato" hidden></p>
+        <p class="totale-composizione">Assicurazione + bollo + tagliandi <span class="origine origine-calcolato">Calcolato</span></p>
+
+        <!-- i dati con cui sono calcolati i costi: si cambiano dal form, non qui -->
+        <div id="profilo" class="profilo" hidden>
+          <dl id="profilo-dati" class="profilo-dati"></dl>
+          <button id="modifica" class="btn" type="button">Modifica i tuoi dati</button>
+        </div>
+      </section>
+
+      <div class="strumenti">
+        <dl id="specifiche" class="specifiche" hidden></dl>
+
+        <div id="calcolatore" class="calcolatore" hidden>
+          <section class="conto" aria-labelledby="conto-titolo">
+            <h2 id="conto-titolo" class="visually-hidden">Voci di costo</h2>
+
+            <article class="voce voce-calcolato" aria-labelledby="bollo-nome">
+              <div class="voce-testa">
+                <h3 id="bollo-nome" class="quadro-titolo">Bollo<span id="bollo-asterisco" class="asterisco" hidden>*</span></h3>
+                <span class="origine origine-calcolato">Calcolato</span>
+              </div>
+              <p class="voce-importo cifra" id="bollo-importo">—</p>
+              <p class="voce-nota" id="bollo-nota"></p>
+            </article>
+
+            <article class="voce voce-stima" aria-labelledby="ass-nome">
+              <div class="voce-testa">
+                <h3 id="ass-nome" class="quadro-titolo">Assicurazione RC</h3>
+                <span class="origine origine-stima_llm">Stima AI</span>
+              </div>
+              <p class="voce-importo cifra" id="ass-importo">—</p>
+              <p id="ass-per-chi" class="per-chi"></p>
+              <p class="voce-nota" id="ass-nota"></p>
+            </article>
+
+            <article class="voce voce-stima voce-larga" aria-labelledby="tag-nome">
+              <div class="voce-testa">
+                <h3 id="tag-nome" class="quadro-titolo">Tagliando</h3>
+                <span class="origine origine-stima_llm">Stima AI</span>
+              </div>
+              <dl class="officine">
+                <div><dt>Officina autorizzata</dt><dd id="tag-aut" class="cifra">—</dd></div>
+                <div><dt>Officina di fiducia</dt><dd id="tag-mec" class="cifra">—</dd></div>
+              </dl>
+              <p class="voce-nota" id="tag-nota"></p>
+            </article>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- nome e versione in piccolo, fissi in alto quando la testata esce dallo schermo -->
+    <div id="compatta" class="compatta" aria-hidden="true">
+      <div class="wrap compatta-interno">
+        <span id="compatta-nome" class="compatta-nome"></span>
+        <span id="compatta-versione" class="compatta-versione"></span>
+      </div>
+    </div>
+
+    <!-- riepilogo fisso in basso sul telefono, quando la testata esce dallo schermo -->
+    <div id="mini" class="mini" aria-hidden="true" hidden>
+      <span class="quadro-titolo">Mantenimento annuo</span>
+      <span id="mini-valore" class="mini-valore cifra">—</span>
+    </div>
+
+    <div id="resto" class="resto" hidden></div>
+  </div>
+</Base>
+
+<!-- Il tema scuro vale per tutta la pagina, barra del sito e form dei dati compresi. -->
+<style is:global>
+  /* :not(#_) alza la specificità sopra quella dei temi di tema.css, chiaro o scuro che sia */
+  :root:not(#_) {
+    --font: "Barlow", "Helvetica Neue", Arial, sans-serif;
+    --condensato: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --carta: #0d0f11;
+    --carta-2: #1b1f24;
+    --pannello: #15181c;
+    --inchiostro: #e8eaed;
+    --grafite: #9aa1a9;         /* testo secondario: 7:1 sul fondo */
+    --filo: #262a30;
+    --filo-forte: #3a4048;
+    --segnale: #ffb000;         /* ambra da cruscotto: totali e azione principale */
+    --su-segnale: #0d0f11;
+    --ufficiale: #3ddc97;
+    --neg: #ff7a6b;
+    --neg-soft: #3a1c19;
+    --warn: #ffb000;
+    --radius: 16px;
+    --radius-sm: 10px;
+    color-scheme: dark;
+  }
+  .origine-ufficiale::before {
+    color: var(--ufficiale);
+  }
+  .origine-stima_llm::before {
+    color: var(--segnale);
+  }
+  .btn {
+    border-radius: 999px;
+    font-family: var(--condensato);
+    font-size: 1.0625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .barra .logo {
+    font-family: var(--condensato);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .avviso {
+    border-radius: var(--radius-sm);
+    border-left-color: var(--segnale);
+  }
+</style>
+
+<style>
+  .briciole {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 24px;
+    font-family: var(--condensato);
+    font-size: 0.9375rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--grafite);
+  }
+  .briciole a {
+    color: var(--grafite);
+  }
+
+  .quadro-titolo {
+    margin: 0;
+    font-family: var(--condensato);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--grafite);
+  }
+
+  /* ---- testata: nome grande in condensato, legenda delle spie a destra */
+  .testata {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 32px;
+    padding: 14px 0 28px;
+  }
+  .testata h1 {
+    font-family: var(--condensato);
+    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .allestimento {
+    margin: 8px 0 0;
+    font-size: 1.0625rem;
+    color: var(--grafite);
+  }
+  .creata {
+    margin: 6px 0 0;
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+  .creata :global(a) {
+    color: var(--inchiostro);
+  }
+  .spie-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin: 0;
+  }
+  .spie-legenda :global(.origine) {
+    font-size: 0.75rem;
+  }
+
+  .avviso {
+    margin-bottom: 24px;
+  }
+
+  .attesa {
+    margin-bottom: 24px;
+    max-width: 44em;
+  }
+  .attesa p {
+    margin: 12px 0 0;
+  }
+  .attesa-barra {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--filo);
+    position: relative;
+    overflow: hidden;
+  }
+  .attesa-barra::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 30%;
+    background: var(--segnale);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .attesa-barra::after {
+      animation: scorri 1.4s ease-in-out infinite;
+    }
+    @keyframes scorri {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(340%); }
+    }
+  }
+
+  /* ---- plancia: il quadrante a sinistra, gli strumenti a destra */
+  .plancia {
+    display: grid;
+    gap: 20px;
+  }
+  @media (min-width: 1000px) {
+    .plancia {
+      grid-template-columns: 420px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+  }
+  .quadro,
+  .voce,
+  .specifiche :global(div) {
+    background: var(--pannello);
+    border: 1px solid var(--filo);
+    border-radius: var(--radius);
+  }
+
+  /* ---- il quadrante del totale: anello decorativo, due cifre della stessa misura */
+  .mantenimento {
+    display: grid;
+    justify-items: center;
+    gap: 18px;
+    padding: 28px 24px;
+  }
+  .quadrante {
+    width: min(320px, 100%);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    padding: 20px;
+    box-sizing: border-box;
+    /* arco di un contagiri: tre quarti di giro, fisso, non rappresenta un valore */
+    background:
+      radial-gradient(closest-side, var(--pannello) calc(100% - 20px), transparent calc(100% - 19px)),
+      conic-gradient(from 225deg, var(--segnale) 0deg 270deg, transparent 270deg);
+    display: grid;
+    place-items: center;
+  }
+  .totale {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+  }
+  .totale-riga {
+    display: grid;
+    grid-template-columns: 1.4em auto 1em;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0;
+  }
+  .totale-da,
+  .totale-euro {
+    font-family: var(--condensato);
+    font-size: 1.25rem;
+    color: var(--grafite);
+  }
+  .totale-da {
+    text-align: right;
+  }
+  .totale-num {
+    font-family: var(--condensato);
+    font-size: clamp(2.75rem, 11vw, 3.75rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--inchiostro);
+    text-align: center;
+  }
+  .totale-unita {
+    margin: 6px 0 0;
+    font-family: var(--condensato);
+    font-size: 1rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--segnale);
+  }
+  .totale.in-attesa .totale-num {
+    color: var(--filo-forte);
+  }
+  .totale-stato {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--grafite);
+    text-align: center;
+  }
+  .totale-composizione {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 12px;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+
+  .profilo {
+    width: 100%;
+    display: grid;
+    gap: 16px;
+    padding-top: 18px;
+    border-top: 1px solid var(--filo);
+  }
+  .profilo-dati {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    margin: 0;
+  }
+  .profilo-dati :global(dt) {
+    margin-bottom: 2px;
+  }
+  .profilo-dati :global(dd) {
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+  .profilo .btn {
+    justify-self: center;
+  }
+
+  /* ---- strumenti: specifiche in fila, poi le voci di costo in riquadri */
+  .strumenti {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+  }
+  .specifiche {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin: 0;
+  }
+  .specifiche :global(div) {
+    padding: 14px 16px;
+  }
+  .specifiche :global(dt) {
+    margin-bottom: 4px;
+  }
+  .specifiche :global(dd) {
+    margin: 0;
+    font-family: var(--condensato);
+    font-size: 1.375rem;
+    font-weight: 600;
+  }
+  .specifiche :global(.spec-nota) {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--grafite);
+  }
+  .specifiche :global(.origine) {
+    margin-top: 8px;
+  }
+
+  .conto {
+    display: grid;
+    gap: 20px;
+  }
+  @media (min-width: 720px) {
+    .conto {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .voce-larga {
+      grid-column: 1 / -1;
+    }
+  }
+  .voce {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    padding: 22px 24px;
+  }
+  /* stima AI: riquadro tratteggiato, come la sua spia */
+  .voce-stima {
+    border: 2px dashed color-mix(in srgb, var(--segnale) 45%, var(--pannello));
+  }
+  .voce-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 14px;
+  }
+  .voce-importo {
+    margin: 0;
+    font-family: var(--condensato);
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .voce-importo :global(.importo-pieno) {
+    display: block;
+    margin-top: 6px;
+    white-space: normal;
+  }
+  .voce-importo :global(small) {
+    font-family: var(--font);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--grafite);
+  }
+  .voce-nota {
+    margin: 4px 0 0;
+    font-size: 0.875rem;
+    color: var(--grafite);
+    max-width: 62ch;
+  }
+  .voce-nota :global(a) {
+    color: var(--grafite);
+  }
+  .voce-nota :global(.eccezione) {
+    display: block;
+    margin-top: 6px;
+  }
+  .asterisco {
+    margin-left: 2px;
+  }
+  .per-chi {
+    margin: 4px 0 0;
+    font-size: 0.9375rem;
+  }
+  .officine {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 6px 0 0;
+  }
+  .officine dt {
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+  .officine dd {
+    margin: 2px 0 0;
+    font-family: var(--condensato);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    line-height: 1.05;
+  }
+  .officine dd :global(small) {
+    font-family: var(--font);
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--grafite);
+  }
+
+  /* ---- testata compatta: sotto la barra del sito (56px + filetto) */
+  .compatta {
+    position: fixed;
+    top: 57px;
+    left: 0;
+    right: 0;
+    z-index: 9;
+    background: var(--carta);
+    border-bottom: 1px solid var(--filo);
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+  .compatta.visibile {
+    transform: none;
+    visibility: visible;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .compatta {
+      transition: transform var(--durata) ease-out, visibility var(--durata);
+    }
+  }
+  .compatta-interno {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .compatta-nome {
+    font-family: var(--condensato);
+    font-size: 1.375rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+  .compatta-versione {
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
+
+  /* ---- riepilogo fisso sul telefono */
+  .mini {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
+    background: var(--pannello);
+    border-top: 1px solid var(--filo);
+  }
+  .mini-valore {
+    font-family: var(--condensato);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--segnale);
+  }
+  @media (min-width: 1000px) {
+    .mini {
+      display: none;
+    }
+  }
+
+  /* ---- il resto della scheda: pannelli, titolo in alto */
+  .resto {
+    display: grid;
+    gap: 20px;
+    margin-top: 28px;
+  }
+  .resto :global(.blocco) {
+    display: grid;
+    gap: 14px;
+    padding: 22px 24px;
+    background: var(--pannello);
+    border: 1px solid var(--filo);
+    border-radius: var(--radius);
+  }
+  .resto :global(.blocco-titolo) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+  }
+  .resto :global(.blocco-titolo h2) {
+    font-family: var(--condensato);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .resto :global(.blocco-corpo) {
+    min-width: 0;
+  }
+  .resto :global(.blocco-corpo > p) {
+    margin: 0;
+    max-width: 72ch;
+  }
+  .resto :global(.elenco) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+  }
+  @media (min-width: 720px) {
+    .resto :global(.elenco) {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+  }
+  .resto :global(.elenco > li) {
+    padding: 16px 18px;
+    background: var(--carta-2);
+    border-radius: var(--radius-sm);
+  }
+  .resto :global(.elenco p) {
+    margin: 4px 0 0;
+    color: var(--grafite);
+  }
+  .resto :global(.problema-testa) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+  }
+  .resto :global(.gravita) {
+    font-family: var(--condensato);
+    font-size: 0.8125rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 1px 8px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: var(--grafite);
+  }
+  .resto :global(.gravita-alta) {
+    color: var(--neg);
+  }
+  .resto :global(.gravita-media) {
+    color: var(--warn);
+  }
+  .resto :global(.costi-riparazione) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    margin-top: 8px;
+    font-size: 0.875rem;
+  }
+  .resto :global(.costi-riparazione span) {
+    color: var(--grafite);
+  }
+  .resto :global(.costi-riparazione strong) {
+    color: var(--inchiostro);
+    font-weight: 600;
+  }
+  .resto :global(.nota-fonte) {
+    margin: 14px 0 0 !important;
+    font-size: 0.8125rem;
+    color: var(--grafite);
+  }
+  .resto :global(.nota-fonte a) {
+    color: var(--inchiostro);
+  }
+
+  /* revisioni UK: due barre per età, questo motore e la media */
+  .resto :global(.mot) {
+    display: grid;
+    gap: 14px;
+  }
+  .resto :global(.mot-riga) {
+    display: grid;
+    grid-template-columns: 72px 1fr 56px;
+    gap: 4px 12px;
+    align-items: center;
+    font-size: 0.875rem;
+  }
+  .resto :global(.mot-eta) {
+    grid-row: span 2;
+    font-family: var(--condensato);
+    font-size: 1rem;
+  }
+  .resto :global(.mot-traccia) {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--carta-2);
+    overflow: hidden;
+  }
+  .resto :global(.mot-barra) {
+    height: 100%;
+    background: var(--ufficiale);
+  }
+  .resto :global(.mot-barra.media) {
+    background: var(--filo-forte);
+  }
+  .resto :global(.mot-num) {
+    font-family: var(--condensato);
+    font-size: 1rem;
+    text-align: right;
+  }
+  .resto :global(.mot-legenda) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin: 0 0 16px !important;
+    font-size: 0.8125rem;
+    color: var(--grafite);
+  }
+  .resto :global(.mot-legenda span::before) {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 10px;
+    margin-right: 8px;
+    border-radius: 3px;
+    background: var(--ufficiale);
+  }
+  .resto :global(.mot-legenda .l-media::before) {
+    background: var(--filo-forte);
+  }
+  .resto :global(.nota-finale) {
+    margin: 0;
+    padding: 4px 4px 0;
+    font-size: 0.8125rem;
+    color: var(--grafite);
+  }
+
+  @media (max-width: 999px) {
+    :global(main) {
+      padding-bottom: 120px;
+    }
+  }
+</style>
+
+<script>
+  import "../lib/paginaScheda";
+</script>
