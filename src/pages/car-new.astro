@@ -1,7 +1,26 @@
 ---
 // La scheda con la grafica "cruscotto": stessi dati e stessa logica di /car (lib/paginaScheda.ts),
-// cambia solo l'aspetto. Tema scuro, cifre condensate, un solo colore di segnale (ambra).
+// cambia solo l'aspetto. Tema scuro, un pannello strumenti unico, cifre condensate, ambra solo
+// per il totale e l'azione principale.
 import Base from "../layouts/Base.astro";
+
+// Tacche del quadrante: disegno fisso, tre quarti di giro come un contagiri. Non rappresentano
+// un valore (nessun calcolo sui dati): danno al totale la forma di uno strumento.
+const TACCHE = 40;
+const tacche = Array.from({ length: TACCHE + 1 }, (_, i) => {
+  const a = ((135 + (270 * i) / TACCHE) * Math.PI) / 180;
+  const lunga = i % 5 === 0;
+  const p = (r: number) => [(100 + r * Math.cos(a)).toFixed(2), (100 + r * Math.sin(a)).toFixed(2)];
+  const [x1, y1] = p(lunga ? 85 : 89);
+  const [x2, y2] = p(95);
+  return { x1, y1, x2, y2, lunga };
+});
+// l'arco ambra, appena dentro le tacche
+const punto = (g: number, r: number) => {
+  const a = (g * Math.PI) / 180;
+  return `${(100 + r * Math.cos(a)).toFixed(2)} ${(100 + r * Math.sin(a)).toFixed(2)}`;
+};
+const arco = `M ${punto(135, 80)} A 80 80 0 1 1 ${punto(45, 80)}`;
 ---
 
 <Base title="Scheda auto — Vroomy">
@@ -9,7 +28,7 @@ import Base from "../layouts/Base.astro";
 
   <div class="wrap cruscotto">
     <nav class="briciole" aria-label="Percorso">
-      <a href="/">Auto</a><span aria-hidden="true">›</span><span id="bc-marca">…</span><span aria-hidden="true">›</span><span id="bc-modello">…</span>
+      <a href="/">Auto</a><span aria-hidden="true">/</span><span id="bc-marca">…</span><span aria-hidden="true">/</span><span id="bc-modello">…</span>
     </nav>
 
     <header class="testata">
@@ -18,11 +37,6 @@ import Base from "../layouts/Base.astro";
         <p id="sottotitolo" class="allestimento"></p>
         <p id="creata" class="creata" hidden></p>
       </div>
-      <dl class="spie-legenda" aria-label="Da dove vengono i numeri">
-        <div><dt><span class="origine origine-ufficiale">Dato ufficiale</span></dt></div>
-        <div><dt><span class="origine origine-calcolato">Calcolato</span></dt></div>
-        <div><dt><span class="origine origine-stima_llm">Stima AI</span></dt></div>
-      </dl>
     </header>
 
     <div id="servono-dati" class="avviso avviso-azione" hidden>
@@ -38,67 +52,71 @@ import Base from "../layouts/Base.astro";
     <div id="errore" class="avviso avviso-azione" role="alert" hidden></div>
     <div id="senza-stima" class="avviso avviso-azione" hidden></div>
 
+    <!-- il pannello strumenti: quadrante del totale a sinistra, letture delle voci a destra -->
     <div class="plancia">
-      <!-- il quadrante: il totale annuo, due cifre della stessa misura -->
-      <section id="mantenimento" class="quadro mantenimento" aria-labelledby="totale-nome" hidden>
-        <h2 id="totale-nome" class="quadro-titolo">Mantenimento annuo</h2>
+      <section id="mantenimento" class="mantenimento" aria-labelledby="totale-nome" hidden>
         <div class="quadrante">
+          <svg class="scala" viewBox="0 0 200 200" aria-hidden="true">
+            {tacche.map((t) => <line x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} class={t.lunga ? "tacca lunga" : "tacca"} />)}
+            <path d={arco} class="arco" />
+          </svg>
           <div id="totale" class="totale" aria-live="polite">
+            <h2 id="totale-nome" class="totale-nome">Mantenimento annuo</h2>
             <p class="totale-riga"><span class="totale-da">da</span><span id="tot-min" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
             <p class="totale-riga"><span class="totale-da">a</span><span id="tot-max" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
-            <p class="totale-unita">all'anno</p>
           </div>
+          <span class="totale-unita" aria-hidden="true">€ / anno</span>
         </div>
         <p id="totale-stato" class="totale-stato" hidden></p>
-        <p class="totale-composizione">Assicurazione + bollo + tagliandi <span class="origine origine-calcolato">Calcolato</span></p>
-
-        <!-- i dati con cui sono calcolati i costi: si cambiano dal form, non qui -->
-        <div id="profilo" class="profilo" hidden>
-          <dl id="profilo-dati" class="profilo-dati"></dl>
-          <button id="modifica" class="btn" type="button">Modifica i tuoi dati</button>
-        </div>
+        <p class="totale-composizione">Assicurazione, bollo e tagliandi sommati <span class="origine origine-calcolato">Calcolato</span></p>
       </section>
 
-      <div class="strumenti">
-        <dl id="specifiche" class="specifiche" hidden></dl>
+      <div id="calcolatore" class="calcolatore" hidden>
+        <section class="conto" aria-labelledby="conto-titolo">
+          <h2 id="conto-titolo" class="visually-hidden">Voci di costo</h2>
 
-        <div id="calcolatore" class="calcolatore" hidden>
-          <section class="conto" aria-labelledby="conto-titolo">
-            <h2 id="conto-titolo" class="visually-hidden">Voci di costo</h2>
+          <article class="voce" aria-labelledby="bollo-nome">
+            <div class="voce-testa">
+              <h3 id="bollo-nome">Bollo<span id="bollo-asterisco" class="asterisco" hidden>*</span></h3>
+              <span class="origine origine-calcolato">Calcolato</span>
+            </div>
+            <p class="voce-importo cifra" id="bollo-importo">—</p>
+            <p class="voce-nota" id="bollo-nota"></p>
+          </article>
 
-            <article class="voce voce-calcolato" aria-labelledby="bollo-nome">
-              <div class="voce-testa">
-                <h3 id="bollo-nome" class="quadro-titolo">Bollo<span id="bollo-asterisco" class="asterisco" hidden>*</span></h3>
-                <span class="origine origine-calcolato">Calcolato</span>
-              </div>
-              <p class="voce-importo cifra" id="bollo-importo">—</p>
-              <p class="voce-nota" id="bollo-nota"></p>
-            </article>
+          <article class="voce" aria-labelledby="ass-nome">
+            <div class="voce-testa">
+              <h3 id="ass-nome">Assicurazione RC</h3>
+              <span class="origine origine-stima_llm">Stima AI</span>
+            </div>
+            <p class="voce-importo cifra" id="ass-importo">—</p>
+            <p id="ass-per-chi" class="per-chi"></p>
+            <p class="voce-nota" id="ass-nota"></p>
+          </article>
 
-            <article class="voce voce-stima" aria-labelledby="ass-nome">
-              <div class="voce-testa">
-                <h3 id="ass-nome" class="quadro-titolo">Assicurazione RC</h3>
-                <span class="origine origine-stima_llm">Stima AI</span>
-              </div>
-              <p class="voce-importo cifra" id="ass-importo">—</p>
-              <p id="ass-per-chi" class="per-chi"></p>
-              <p class="voce-nota" id="ass-nota"></p>
-            </article>
-
-            <article class="voce voce-stima voce-larga" aria-labelledby="tag-nome">
-              <div class="voce-testa">
-                <h3 id="tag-nome" class="quadro-titolo">Tagliando</h3>
-                <span class="origine origine-stima_llm">Stima AI</span>
-              </div>
-              <dl class="officine">
-                <div><dt>Officina autorizzata</dt><dd id="tag-aut" class="cifra">—</dd></div>
-                <div><dt>Officina di fiducia</dt><dd id="tag-mec" class="cifra">—</dd></div>
-              </dl>
-              <p class="voce-nota" id="tag-nota"></p>
-            </article>
-          </section>
-        </div>
+          <article class="voce" aria-labelledby="tag-nome">
+            <div class="voce-testa">
+              <h3 id="tag-nome">Tagliando</h3>
+              <span class="origine origine-stima_llm">Stima AI</span>
+            </div>
+            <dl class="officine">
+              <div><dt>Officina autorizzata</dt><dd id="tag-aut" class="cifra">—</dd></div>
+              <div><dt>Officina di fiducia</dt><dd id="tag-mec" class="cifra">—</dd></div>
+            </dl>
+            <p class="voce-nota" id="tag-nota"></p>
+          </article>
+        </section>
       </div>
+    </div>
+
+    <!-- i dati dell'auto, in fila come il computer di bordo -->
+    <dl id="specifiche" class="specifiche" hidden></dl>
+
+    <!-- i dati con cui sono calcolati i costi: si cambiano dal form, non qui -->
+    <div id="profilo" class="profilo" hidden>
+      <p class="profilo-titolo">Calcolato per</p>
+      <dl id="profilo-dati" class="profilo-dati"></dl>
+      <button id="modifica" class="btn btn-secondario" type="button">Modifica i tuoi dati</button>
     </div>
 
     <!-- nome e versione in piccolo, fissi in alto quando la testata esce dallo schermo -->
@@ -111,7 +129,7 @@ import Base from "../layouts/Base.astro";
 
     <!-- riepilogo fisso in basso sul telefono, quando la testata esce dallo schermo -->
     <div id="mini" class="mini" aria-hidden="true" hidden>
-      <span class="quadro-titolo">Mantenimento annuo</span>
+      <span class="mini-nome">Mantenimento annuo</span>
       <span id="mini-valore" class="mini-valore cifra">—</span>
     </div>
 
@@ -125,21 +143,21 @@ import Base from "../layouts/Base.astro";
   :root:not(#_) {
     --font: "Barlow", "Helvetica Neue", Arial, sans-serif;
     --condensato: "Barlow Condensed", "Arial Narrow", sans-serif;
-    --carta: #0d0f11;
-    --carta-2: #1b1f24;
-    --pannello: #15181c;
-    --inchiostro: #e8eaed;
-    --grafite: #9aa1a9;         /* testo secondario: 7:1 sul fondo */
-    --filo: #262a30;
-    --filo-forte: #3a4048;
-    --segnale: #ffb000;         /* ambra da cruscotto: totali e azione principale */
-    --su-segnale: #0d0f11;
-    --ufficiale: #3ddc97;
-    --neg: #ff7a6b;
+    --carta: #111315;
+    --carta-2: #1a1d20;
+    --pannello: #16191c;
+    --inchiostro: #e6e4df;
+    --grafite: #979a9e;         /* testo secondario: 6,5:1 sul fondo */
+    --filo: #26292d;
+    --filo-forte: #3b3f44;
+    --segnale: #f5a300;         /* ambra delle lancette: solo totale e azione principale */
+    --su-segnale: #111315;
+    --ufficiale: #58c38f;
+    --neg: #ef6f5e;
     --neg-soft: #3a1c19;
-    --warn: #ffb000;
-    --radius: 16px;
-    --radius-sm: 10px;
+    --warn: #f5a300;
+    --radius: 6px;
+    --radius-sm: 4px;
     color-scheme: dark;
   }
   .origine-ufficiale::before {
@@ -149,19 +167,9 @@ import Base from "../layouts/Base.astro";
     color: var(--segnale);
   }
   .btn {
-    border-radius: 999px;
-    font-family: var(--condensato);
-    font-size: 1.0625rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .barra .logo {
-    font-family: var(--condensato);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-weight: 600;
   }
   .avviso {
-    border-radius: var(--radius-sm);
     border-left-color: var(--segnale);
   }
 </style>
@@ -172,70 +180,41 @@ import Base from "../layouts/Base.astro";
     flex-wrap: wrap;
     gap: 8px;
     padding-top: 24px;
-    font-family: var(--condensato);
-    font-size: 0.9375rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-size: 0.875rem;
     color: var(--grafite);
   }
   .briciole a {
     color: var(--grafite);
   }
 
-  .quadro-titolo {
-    margin: 0;
-    font-family: var(--condensato);
-    font-size: 1.0625rem;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--grafite);
-  }
-
-  /* ---- testata: nome grande in condensato, legenda delle spie a destra */
+  /* ---- testata: il nome come su un badge del portellone, la versione sotto */
   .testata {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px 32px;
-    padding: 14px 0 28px;
+    padding: 10px 0 28px;
   }
   .testata h1 {
     font-family: var(--condensato);
-    font-size: clamp(2.5rem, 7vw, 4.5rem);
-    font-weight: 700;
+    font-size: clamp(2.75rem, 7vw, 4.75rem);
+    font-weight: 600;
     line-height: 0.95;
-    letter-spacing: 0;
-    text-transform: uppercase;
+    letter-spacing: -0.01em;
   }
   .allestimento {
-    margin: 8px 0 0;
+    margin: 10px 0 0;
     font-size: 1.0625rem;
     color: var(--grafite);
   }
   .creata {
-    margin: 6px 0 0;
+    margin: 4px 0 0;
     font-size: 0.875rem;
     color: var(--grafite);
   }
   .creata :global(a) {
     color: var(--inchiostro);
   }
-  .spie-legenda {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 18px;
-    margin: 0;
-  }
-  .spie-legenda :global(.origine) {
-    font-size: 0.75rem;
-  }
 
   .avviso {
     margin-bottom: 24px;
   }
-
   .attesa {
     margin-bottom: 24px;
     max-width: 44em;
@@ -245,8 +224,7 @@ import Base from "../layouts/Base.astro";
   }
   .attesa-barra {
     display: block;
-    height: 3px;
-    border-radius: 2px;
+    height: 2px;
     background: var(--filo);
     position: relative;
     overflow: hidden;
@@ -268,62 +246,86 @@ import Base from "../layouts/Base.astro";
     }
   }
 
-  /* ---- plancia: il quadrante a sinistra, gli strumenti a destra */
+  /* ---- pannello strumenti: una sola cornice, divisa da un filetto verticale */
   .plancia {
     display: grid;
-    gap: 20px;
+  }
+  .plancia:has(> :not([hidden])) {
+    background: var(--pannello);
+    border: 1px solid var(--filo);
+    border-radius: 14px 14px 6px 6px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 20px 40px -24px rgb(0 0 0 / 0.8);
   }
   @media (min-width: 1000px) {
     .plancia {
-      grid-template-columns: 420px minmax(0, 1fr);
-      gap: 28px;
-      align-items: start;
+      grid-template-columns: 400px minmax(0, 1fr);
+    }
+    .plancia > .calcolatore {
+      border-left: 1px solid var(--filo);
     }
   }
-  .quadro,
-  .voce,
-  .specifiche :global(div) {
-    background: var(--pannello);
-    border: 1px solid var(--filo);
-    border-radius: var(--radius);
+  @media (max-width: 999px) {
+    .plancia > .calcolatore {
+      border-top: 1px solid var(--filo);
+    }
   }
 
-  /* ---- il quadrante del totale: anello decorativo, due cifre della stessa misura */
+  /* ---- il quadrante: scala fissa, due cifre della stessa misura, unità nell'apertura in basso */
   .mantenimento {
     display: grid;
     justify-items: center;
-    gap: 18px;
-    padding: 28px 24px;
+    gap: 14px;
+    padding: 28px 24px 24px;
   }
   .quadrante {
+    position: relative;
     width: min(320px, 100%);
     aspect-ratio: 1;
-    border-radius: 50%;
-    padding: 20px;
-    box-sizing: border-box;
-    /* arco di un contagiri: tre quarti di giro, fisso, non rappresenta un valore */
-    background:
-      radial-gradient(closest-side, var(--pannello) calc(100% - 20px), transparent calc(100% - 19px)),
-      conic-gradient(from 225deg, var(--segnale) 0deg 270deg, transparent 270deg);
     display: grid;
     place-items: center;
   }
+  .scala {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .tacca {
+    stroke: var(--filo-forte);
+    stroke-width: 1.2;
+  }
+  .tacca.lunga {
+    stroke: var(--grafite);
+    stroke-width: 2;
+  }
+  .arco {
+    fill: none;
+    stroke: var(--segnale);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+  }
   .totale {
+    position: relative;
     display: grid;
     justify-items: center;
-    gap: 2px;
+  }
+  .totale-nome {
+    margin-bottom: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--grafite);
+    letter-spacing: 0;
   }
   .totale-riga {
     display: grid;
-    grid-template-columns: 1.4em auto 1em;
+    grid-template-columns: 1.3em auto 1em;
     align-items: baseline;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
   }
   .totale-da,
   .totale-euro {
-    font-family: var(--condensato);
-    font-size: 1.25rem;
+    font-size: 1rem;
     color: var(--grafite);
   }
   .totale-da {
@@ -331,18 +333,18 @@ import Base from "../layouts/Base.astro";
   }
   .totale-num {
     font-family: var(--condensato);
-    font-size: clamp(2.75rem, 11vw, 3.75rem);
-    font-weight: 700;
-    line-height: 1;
+    font-size: clamp(2.75rem, 11vw, 3.5rem);
+    font-weight: 600;
+    line-height: 1.02;
     color: var(--inchiostro);
     text-align: center;
   }
   .totale-unita {
-    margin: 6px 0 0;
+    position: absolute;
+    bottom: 8%;
     font-family: var(--condensato);
-    font-size: 1rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    font-size: 0.9375rem;
+    font-weight: 500;
     color: var(--segnale);
   }
   .totale.in-attesa .totale-num {
@@ -360,105 +362,40 @@ import Base from "../layouts/Base.astro";
     justify-content: center;
     gap: 4px 12px;
     margin: 0;
-    font-size: 0.875rem;
-    color: var(--grafite);
-  }
-
-  .profilo {
-    width: 100%;
-    display: grid;
-    gap: 16px;
-    padding-top: 18px;
-    border-top: 1px solid var(--filo);
-  }
-  .profilo-dati {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 16px;
-    margin: 0;
-  }
-  .profilo-dati :global(dt) {
-    margin-bottom: 2px;
-  }
-  .profilo-dati :global(dd) {
-    margin: 0;
-    font-size: 0.9375rem;
-  }
-  .profilo .btn {
-    justify-self: center;
-  }
-
-  /* ---- strumenti: specifiche in fila, poi le voci di costo in riquadri */
-  .strumenti {
-    display: grid;
-    gap: 20px;
-    min-width: 0;
-  }
-  .specifiche {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 12px;
-    margin: 0;
-  }
-  .specifiche :global(div) {
-    padding: 14px 16px;
-  }
-  .specifiche :global(dt) {
-    margin-bottom: 4px;
-  }
-  .specifiche :global(dd) {
-    margin: 0;
-    font-family: var(--condensato);
-    font-size: 1.375rem;
-    font-weight: 600;
-  }
-  .specifiche :global(.spec-nota) {
-    display: block;
-    margin-top: 2px;
-    font-family: var(--font);
     font-size: 0.8125rem;
-    font-weight: 400;
     color: var(--grafite);
   }
-  .specifiche :global(.origine) {
-    margin-top: 8px;
-  }
 
-  .conto {
-    display: grid;
-    gap: 20px;
-  }
-  @media (min-width: 720px) {
-    .conto {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .voce-larga {
-      grid-column: 1 / -1;
-    }
-  }
+  /* ---- le letture: una riga per voce, nome a sinistra e cifra a destra */
   .voce {
     display: grid;
-    align-content: start;
-    gap: 8px;
-    padding: 22px 24px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 24px;
+    padding: 24px 28px;
   }
-  /* stima AI: riquadro tratteggiato, come la sua spia */
-  .voce-stima {
-    border: 2px dashed color-mix(in srgb, var(--segnale) 45%, var(--pannello));
+  .voce + .voce {
+    border-top: 1px solid var(--filo);
+  }
+  .voce > :not(.voce-testa, .voce-importo) {
+    grid-column: 1 / -1;
   }
   .voce-testa {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px 14px;
+    display: grid;
+    gap: 4px;
+    align-content: start;
+  }
+  .voce-testa h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0;
   }
   .voce-importo {
     margin: 0;
     font-family: var(--condensato);
-    font-size: clamp(2.25rem, 5vw, 3.25rem);
-    font-weight: 700;
+    font-size: clamp(2rem, 4.5vw, 2.75rem);
+    font-weight: 600;
     line-height: 1;
+    text-align: right;
     white-space: nowrap;
   }
   .voce-importo :global(.importo-pieno) {
@@ -489,14 +426,14 @@ import Base from "../layouts/Base.astro";
     margin-left: 2px;
   }
   .per-chi {
-    margin: 4px 0 0;
+    margin: 6px 0 0;
     font-size: 0.9375rem;
   }
   .officine {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    margin: 6px 0 0;
+    margin: 10px 0 0;
   }
   .officine dt {
     font-size: 0.875rem;
@@ -505,8 +442,8 @@ import Base from "../layouts/Base.astro";
   .officine dd {
     margin: 2px 0 0;
     font-family: var(--condensato);
-    font-size: clamp(1.75rem, 4vw, 2.5rem);
-    font-weight: 700;
+    font-size: clamp(1.625rem, 3.5vw, 2.125rem);
+    font-weight: 600;
     line-height: 1.05;
   }
   .officine dd :global(small) {
@@ -514,6 +451,80 @@ import Base from "../layouts/Base.astro";
     font-size: 0.875rem;
     font-weight: 400;
     color: var(--grafite);
+  }
+
+  /* ---- computer di bordo: i dati dell'auto in una fila, separati da filetti */
+  .specifiche {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    margin: 0;
+    background: var(--carta-2);
+    border: 1px solid var(--filo);
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+  }
+  .specifiche :global(div) {
+    padding: 14px 20px;
+    border-left: 1px solid var(--filo);
+    margin-left: -1px;
+  }
+  .specifiche :global(dt) {
+    margin-bottom: 2px;
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .specifiche :global(dd) {
+    margin: 0;
+    font-family: var(--condensato);
+    font-size: 1.3125rem;
+    font-weight: 500;
+  }
+  .specifiche :global(.spec-nota) {
+    display: block;
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--grafite);
+  }
+  .specifiche :global(.origine) {
+    margin-top: 6px;
+  }
+
+  /* ---- per chi è calcolato: una riga sola, il pulsante in fondo */
+  .profilo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 28px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--filo);
+  }
+  .profilo-titolo {
+    margin: 0;
+    font-weight: 600;
+  }
+  .profilo-dati {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    margin: 0;
+    flex: 1 1 auto;
+  }
+  .profilo-dati :global(dt) {
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .profilo-dati :global(dd) {
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+  .profilo .btn {
+    min-height: 44px;
+    padding: 8px 18px;
   }
 
   /* ---- testata compatta: sotto la barra del sito (56px + filetto) */
@@ -548,8 +559,7 @@ import Base from "../layouts/Base.astro";
   .compatta-nome {
     font-family: var(--condensato);
     font-size: 1.375rem;
-    font-weight: 700;
-    text-transform: uppercase;
+    font-weight: 600;
     line-height: 1.2;
   }
   .compatta-versione {
@@ -571,10 +581,14 @@ import Base from "../layouts/Base.astro";
     background: var(--pannello);
     border-top: 1px solid var(--filo);
   }
+  .mini-nome {
+    font-size: 0.875rem;
+    color: var(--grafite);
+  }
   .mini-valore {
     font-family: var(--condensato);
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--segnale);
   }
   @media (min-width: 1000px) {
@@ -583,57 +597,54 @@ import Base from "../layouts/Base.astro";
     }
   }
 
-  /* ---- il resto della scheda: pannelli, titolo in alto */
+  /* ---- il resto della scheda: titolo a sinistra, contenuto a destra, filetti fra le sezioni */
   .resto {
-    display: grid;
-    gap: 20px;
-    margin-top: 28px;
+    margin-top: 48px;
   }
   .resto :global(.blocco) {
     display: grid;
-    gap: 14px;
-    padding: 22px 24px;
-    background: var(--pannello);
-    border: 1px solid var(--filo);
-    border-radius: var(--radius);
+    gap: 12px;
+    padding: 26px 0 30px;
+    border-top: 1px solid var(--filo);
   }
   .resto :global(.blocco-titolo) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px 16px;
+    display: grid;
+    gap: 6px;
+    align-content: start;
   }
   .resto :global(.blocco-titolo h2) {
     font-family: var(--condensato);
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 1.625rem;
+    font-weight: 600;
+    letter-spacing: 0;
   }
   .resto :global(.blocco-corpo) {
     min-width: 0;
+    max-width: 72ch;
   }
   .resto :global(.blocco-corpo > p) {
     margin: 0;
-    max-width: 72ch;
+  }
+  @media (min-width: 1000px) {
+    .resto :global(.blocco) {
+      grid-template-columns: 3fr 9fr;
+      gap: 40px;
+    }
   }
   .resto :global(.elenco) {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: grid;
-    gap: 12px;
-  }
-  @media (min-width: 720px) {
-    .resto :global(.elenco) {
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
   }
   .resto :global(.elenco > li) {
-    padding: 16px 18px;
-    background: var(--carta-2);
-    border-radius: var(--radius-sm);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--filo);
+  }
+  .resto :global(.elenco > li:first-child) {
+    padding-top: 0;
+  }
+  .resto :global(.elenco > li:last-child) {
+    border-bottom: 0;
   }
   .resto :global(.elenco p) {
     margin: 4px 0 0;
@@ -643,23 +654,30 @@ import Base from "../layouts/Base.astro";
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 4px 12px;
+    gap: 4px 14px;
   }
+  /* gravità come una spia: il punto colorato e la parola, niente pillola */
   .resto :global(.gravita) {
-    font-family: var(--condensato);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.8125rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 1px 8px;
-    border: 1px solid currentColor;
-    border-radius: 999px;
     color: var(--grafite);
   }
-  .resto :global(.gravita-alta) {
-    color: var(--neg);
+  .resto :global(.gravita::before) {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--filo-forte);
   }
-  .resto :global(.gravita-media) {
-    color: var(--warn);
+  .resto :global(.gravita-alta::before) {
+    background: var(--neg);
+    box-shadow: 0 0 8px var(--neg);
+  }
+  .resto :global(.gravita-media::before) {
+    background: var(--warn);
+    box-shadow: 0 0 8px var(--warn);
   }
   .resto :global(.costi-riparazione) {
     display: flex;
@@ -699,13 +717,11 @@ import Base from "../layouts/Base.astro";
   .resto :global(.mot-eta) {
     grid-row: span 2;
     font-family: var(--condensato);
-    font-size: 1rem;
+    font-size: 1.0625rem;
   }
   .resto :global(.mot-traccia) {
-    height: 10px;
-    border-radius: 5px;
+    height: 8px;
     background: var(--carta-2);
-    overflow: hidden;
   }
   .resto :global(.mot-barra) {
     height: 100%;
@@ -716,7 +732,7 @@ import Base from "../layouts/Base.astro";
   }
   .resto :global(.mot-num) {
     font-family: var(--condensato);
-    font-size: 1rem;
+    font-size: 1.0625rem;
     text-align: right;
   }
   .resto :global(.mot-legenda) {
@@ -731,9 +747,8 @@ import Base from "../layouts/Base.astro";
     content: "";
     display: inline-block;
     width: 14px;
-    height: 10px;
+    height: 8px;
     margin-right: 8px;
-    border-radius: 3px;
     background: var(--ufficiale);
   }
   .resto :global(.mot-legenda .l-media::before) {
@@ -741,7 +756,8 @@ import Base from "../layouts/Base.astro";
   }
   .resto :global(.nota-finale) {
     margin: 0;
-    padding: 4px 4px 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--filo);
     font-size: 0.8125rem;
     color: var(--grafite);
   }
