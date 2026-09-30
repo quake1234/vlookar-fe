@@ -604,6 +604,15 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     margin: 0;
     text-align: right;
   }
+  /* la descrizione del tagliando a sinistra delle officine, subito sotto "Stima AI" */
+  .voce:has(> dl.officine) {
+    grid-template-rows: auto 1fr;
+  }
+  .voce:has(> dl.officine) > .voce-nota {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+  }
   /* telefono: nome sopra, cifre sotto, tutto a sinistra (affiancate non ci stanno) */
   @media (max-width: 559px) {
     .voce {
@@ -616,6 +625,12 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
       grid-column: 1;
       grid-row: auto;
       text-align: left;
+    }
+    .voce:has(> dl.officine) {
+      grid-template-rows: none;
+    }
+    .voce:has(> dl.officine) > .voce-nota {
+      grid-row: auto;
     }
   }
   .officine dt {
