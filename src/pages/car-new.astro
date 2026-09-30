@@ -595,11 +595,28 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     margin: 6px 0 0;
     font-size: 0.9375rem;
   }
-  .officine {
+  /* le due officine una sopra l'altra, nella colonna delle cifre di bollo e assicurazione */
+  .voce > dl.officine {
+    grid-column: 2;
+    grid-row: 1 / span 2;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 10px 0 0;
+    gap: 14px;
+    margin: 0;
+    text-align: right;
+  }
+  /* telefono: nome sopra, cifre sotto, tutto a sinistra (affiancate non ci stanno) */
+  @media (max-width: 559px) {
+    .voce {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .voce-importo {
+      text-align: left;
+    }
+    .voce > dl.officine {
+      grid-column: 1;
+      grid-row: auto;
+      text-align: left;
+    }
   }
   .officine dt {
     font-size: 0.875rem;
@@ -608,9 +625,10 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
   .officine dd {
     margin: 2px 0 0;
     font-family: var(--condensato);
-    font-size: clamp(1.625rem, 3.5vw, 2.125rem);
+    font-size: clamp(2rem, 4.5vw, 2.75rem);
     font-weight: 600;
-    line-height: 1.05;
+    line-height: 1;
+    white-space: nowrap;
   }
   .officine dd :global(small) {
     font-family: var(--font);
