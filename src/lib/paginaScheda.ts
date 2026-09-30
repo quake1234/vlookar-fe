@@ -182,6 +182,23 @@ function renderVoci(c: Scheda) {
   $("tag-nota").textContent = noteTagliando(c);
 }
 
+/** Il quadrante di /car-new (su /car non c'è): cifre delle tacche lunghe e posizioni della
+ *  lancetta, così come arrivano dal backend. Senza scala: cifre vuote, lancetta a riposo. */
+function renderQuadrante(q: Scheda["mantenimento"]["quadrante"]) {
+  const scala = document.querySelector<SVGElement>(".scala");
+  if (!scala) return;
+  scala.querySelectorAll(".cifra-scala").forEach((el, i) => {
+    el.textContent = q ? formatIntero(q.tacche[i]) : "";
+  });
+  if (q) {
+    scala.style.setProperty("--min", String(q.min_pct));
+    scala.style.setProperty("--max", String(q.max_pct));
+  } else {
+    scala.style.removeProperty("--min");
+    scala.style.removeProperty("--max");
+  }
+}
+
 function renderTotale(c: Scheda) {
   const m = c.mantenimento;
   const totale = $("totale");
@@ -192,6 +209,7 @@ function renderTotale(c: Scheda) {
   const aspetta = inAttesa(c) || (manca && stimaInAttesa(c));
   totale.classList.toggle("in-attesa", aspetta);
 
+  renderQuadrante(inAttesa(c) ? null : m.quadrante ?? null);
   if (inAttesa(c) || m.min === null || m.max === null) {
     svuota(min, "—");
     svuota(max, "—");

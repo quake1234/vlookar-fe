@@ -157,6 +157,9 @@ export interface Scheda {
       tagliandi: Intervallo;
     };
     mancano: string[];
+    /** Scala del quadrante di /car-new, calcolata dal backend: cifre delle tacche lunghe (da 0)
+     *  e posizione di min e max in percentuale del fondo scala. null se il totale manca. */
+    quadrante?: { tacche: number[]; min_pct: number; max_pct: number; tacca_massimo_pct: number } | null;
   };
   // Stima per anno e fascia di km; null se l'utente non ha indicato i km.
   usura: null | {
