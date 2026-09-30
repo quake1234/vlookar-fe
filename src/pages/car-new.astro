@@ -172,6 +172,22 @@ const arco = `M ${punto(135, 80)} A 80 80 0 1 1 ${punto(45, 80)}`;
   .avviso {
     border-left-color: var(--segnale);
   }
+
+  /* Cursore a forma di auto: fari spenti sulla pagina, anabbaglianti sopra ciò che si clicca,
+     abbaglianti mentre si preme. Il punto attivo (14 14) è sul muso. Senza immagine: il cursore solito. */
+  html {
+    cursor: url("/cursore/auto.svg") 14 14, auto;
+  }
+  :is(a[href], button:not(:disabled), select:not(:disabled), label[for], summary, [role="button"], [role="option"]):hover {
+    cursor: url("/cursore/auto-anabbaglianti.svg") 14 14, pointer;
+  }
+  :is(a[href], button:not(:disabled), select:not(:disabled), label[for], summary, [role="button"], [role="option"]):active {
+    cursor: url("/cursore/auto-abbaglianti.svg") 14 14, pointer;
+  }
+  /* nei campi di testo resta la barra per scrivere */
+  input:not([type="button"], [type="submit"], [type="checkbox"], [type="radio"]), textarea {
+    cursor: text;
+  }
 </style>
 
 <style>
