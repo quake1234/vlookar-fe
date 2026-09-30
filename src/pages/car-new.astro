@@ -71,7 +71,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     <div id="errore" class="avviso avviso-azione" role="alert" hidden></div>
     <div id="senza-stima" class="avviso avviso-azione" hidden></div>
 
-    <!-- il pannello strumenti: quadrante del totale a sinistra, letture delle voci a destra -->
+    <!-- il pannello strumenti: letture delle voci a sinistra, quadrante del totale a destra -->
     <div class="plancia">
       <section id="mantenimento" class="mantenimento" aria-labelledby="totale-nome" hidden>
         <div class="quadrante">
@@ -290,11 +290,18 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 20px 40px -24px rgb(0 0 0 / 0.8);
   }
   @media (min-width: 1000px) {
+    /* voci a sinistra, quadrante a destra; nel codice il quadrante resta primo (si legge prima il totale) */
     .plancia {
-      grid-template-columns: 400px minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) 400px;
+    }
+    .plancia > .mantenimento {
+      grid-column: 2;
+      grid-row: 1;
     }
     .plancia > .calcolatore {
-      border-left: 1px solid var(--filo);
+      grid-column: 1;
+      grid-row: 1;
+      border-right: 1px solid var(--filo);
     }
   }
   @media (max-width: 999px) {
