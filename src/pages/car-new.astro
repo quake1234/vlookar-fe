@@ -77,6 +77,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
             <h2 id="totale-nome" class="totale-nome">Mantenimento annuo</h2>
             <p class="totale-riga"><span class="totale-da">da</span><span id="tot-min" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
             <p class="totale-riga"><span class="totale-da">a</span><span id="tot-max" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
+            <p class="totale-calcolo">Calcolo in corso…</p>
           </div>
           <span class="totale-unita" aria-hidden="true">€ / anno</span>
         </div>
@@ -366,9 +367,27 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     transform-origin: 100px 100px;
     transform: rotate(calc(135deg + 2.7deg * (var(--min) + var(--max)) / 2));
   }
+  .quadrante:has(.totale.in-attesa) .lancetta {
+    transform: rotate(135deg);
+  }
   @media (prefers-reduced-motion: no-preference) {
     .lancetta {
       animation: giri 6s ease-in-out infinite;
+    }
+    /* Accensione, mentre si aspettano i dati: 3 s di oscillazione fra la prima tacca lunga (135°)
+       e la seconda (168,75°), poi 3 s ferma sulla prima; e si ricomincia finché i dati non arrivano. */
+    .quadrante:has(.totale.in-attesa) .lancetta {
+      animation: accensione 6s ease-in-out infinite;
+    }
+    @keyframes accensione {
+      0% { transform: rotate(135deg); }
+      7% { transform: rotate(162deg); }
+      13% { transform: rotate(142deg); }
+      21% { transform: rotate(168deg); }
+      29% { transform: rotate(146deg); }
+      37% { transform: rotate(165deg); }
+      44% { transform: rotate(139deg); }
+      50%, 100% { transform: rotate(135deg); }
     }
     @keyframes giri {
       0% { transform: rotate(calc(135deg + 2.7deg * (var(--min) + (var(--max) - var(--min)) * 0.05))); }
@@ -427,8 +446,20 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     font-weight: 500;
     color: var(--segnale);
   }
-  .totale.in-attesa .totale-num {
-    color: var(--filo-forte);
+  /* in attesa dei dati: al posto delle cifre, "Calcolo in corso…" */
+  .totale-calcolo {
+    display: none;
+    margin: 18px 0;
+    font-family: var(--condensato);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--inchiostro);
+  }
+  .totale.in-attesa .totale-riga {
+    display: none;
+  }
+  .totale.in-attesa .totale-calcolo {
+    display: block;
   }
   .totale-stato {
     margin: 0;
