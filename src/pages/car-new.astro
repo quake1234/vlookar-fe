@@ -336,8 +336,8 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
   .arco-rosso {
     stroke: var(--fuorigiri);
   }
-  /* La lancetta oscilla come un motore al minimo, sempre fra la seconda tacca lunga (168,75°)
-     e la quarta (236,25°). Solo decorazione: non indica il valore del totale. */
+  /* La lancetta oscilla come un motore al minimo, sempre fra la terza tacca lunga (202,5°)
+     e la quinta, quella in alto (270°). Solo decorazione: non indica il valore del totale. */
   .lancetta {
     stroke: var(--fuorigiri);
     stroke-width: 3.5;
@@ -345,24 +345,24 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     filter: drop-shadow(0 0 3px rgb(229 57 47 / 0.6));
     transform-box: view-box;
     transform-origin: 100px 100px;
-    transform: rotate(200deg);
+    transform: rotate(236deg);
   }
   @media (prefers-reduced-motion: no-preference) {
     .lancetta {
       animation: giri 6s ease-in-out infinite;
     }
     @keyframes giri {
-      0% { transform: rotate(172deg); }
-      10% { transform: rotate(208deg); }
-      18% { transform: rotate(190deg); }
-      30% { transform: rotate(232deg); }
-      38% { transform: rotate(214deg); }
-      50% { transform: rotate(236deg); }
-      62% { transform: rotate(182deg); }
-      72% { transform: rotate(204deg); }
-      84% { transform: rotate(169deg); }
-      92% { transform: rotate(186deg); }
-      100% { transform: rotate(172deg); }
+      0% { transform: rotate(206deg); }
+      10% { transform: rotate(242deg); }
+      18% { transform: rotate(224deg); }
+      30% { transform: rotate(266deg); }
+      38% { transform: rotate(248deg); }
+      50% { transform: rotate(270deg); }
+      62% { transform: rotate(216deg); }
+      72% { transform: rotate(238deg); }
+      84% { transform: rotate(203deg); }
+      92% { transform: rotate(220deg); }
+      100% { transform: rotate(206deg); }
     }
   }
   .totale {
