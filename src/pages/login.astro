@@ -5,7 +5,7 @@
 import Base from "../layouts/Base.astro";
 ---
 
-<Base title="Accedi — Vroomy" description="Accedi a Vroomy per ritrovare i tuoi dati su ogni dispositivo." legenda={false} pubblica>
+<Base title="Accedi — Vlookar" description="Accedi a Vlookar per ritrovare i tuoi dati su ogni dispositivo." legenda={false} pubblica>
   <div class="wrap accesso">
     <section class="riquadro pannello" aria-labelledby="titolo">
       <h1 id="titolo">Accedi</h1>
@@ -190,7 +190,7 @@ import Base from "../layouts/Base.astro";
     const t = TESTI[modo];
     $("titolo").textContent = t.titolo;
     $("sottotitolo").textContent = t.sotto;
-    document.title = `${t.titolo} — Vroomy`;
+    document.title = `${t.titolo} — Vlookar`;
     invia.textContent = t.invia;
     $("con-google").hidden = modo !== "login" && modo !== "signup";
     $("campo-email").hidden = modo === "new-password";

@@ -1,6 +1,6 @@
 ---
 name: revisore-sito
-description: Rivede il codice del sito scritto o modificato contro le regole di Vroomy — nessun calcolo nel frontend, provenienza di ogni valore visibile, chiamate al backend solo da src/lib/api.ts, dati personali solo nel corpo di una POST. Usalo dopo aver modificato una pagina, un componente o un modulo di src/lib/, prima di considerarlo chiuso. Non modifica nulla, riporta soltanto.
+description: Rivede il codice del sito scritto o modificato contro le regole di Vlookar — nessun calcolo nel frontend, provenienza di ogni valore visibile, chiamate al backend solo da src/lib/api.ts, dati personali solo nel corpo di una POST. Usalo dopo aver modificato una pagina, un componente o un modulo di src/lib/, prima di considerarlo chiuso. Non modifica nulla, riporta soltanto.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---

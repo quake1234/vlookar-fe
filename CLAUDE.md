@@ -1,6 +1,6 @@
-# Vroomy — sito
+# Vlookar — sito
 
-Il sito di Vroomy: scelta del veicolo (anno → marca → modello → allestimento) e scheda con prezzo,
+Il sito di Vlookar: scelta del veicolo (anno → marca → modello → allestimento) e scheda con prezzo,
 assicurazione, bollo e problemi tipici. Astro, sito statico.
 
 **Il resto del progetto sta nel repository del backend**, `quake1234/Vroomy-be` (in locale

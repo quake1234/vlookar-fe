@@ -1,6 +1,6 @@
 ---
 name: avvia-sito
-description: Avvia l'ambiente locale di Vroomy — Postgres e backend FastAPI da ../vroomy-backend, sito Astro da qui — e verifica che rispondano. Si attiva su "avvia il sito", "avvia server e frontend", "fai partire tutto", "lancia backend e sito", "ferma il sito".
+description: Avvia l'ambiente locale di Vlookar — Postgres e backend FastAPI da ../vroomy-backend, sito Astro da qui — e verifica che rispondano. Si attiva su "avvia il sito", "avvia server e frontend", "fai partire tutto", "lancia backend e sito", "ferma il sito".
 ---
 
 # Avvia il sito in locale

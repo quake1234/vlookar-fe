@@ -244,7 +244,7 @@ function renderTesta(s: Scheda) {
   const a = s.allestimento;
   const marca = nomeLeggibile(a.marca);
   const modello = nomeLeggibile(a.modello);
-  document.title = `${marca} ${modello} ${a.nome} — Vroomy`;
+  document.title = `${marca} ${modello} ${a.nome} — Vlookar`;
   $("titolo").textContent = `${marca} ${modello}`;
   $("sottotitolo").textContent = a.nome;
   $("compatta-nome").textContent = `${marca} ${modello}`;
