@@ -77,12 +77,19 @@ export async function accedi(email: string, password: string): Promise<string | 
   return error ? messaggio(error) : null;
 }
 
-/** Registra l'utente. confermare: Supabase ha mandato il link di conferma, l'accesso arriva dopo. */
-export async function registrati(email: string, password: string): Promise<{ errore: string | null; confermare: boolean }> {
+/** Registra l'utente. confermare: Supabase ha mandato il link di conferma, l'accesso arriva dopo.
+ *  Nome e cognome vanno nei metadati dell'utente Supabase, con le stesse chiavi che usa Google
+ *  (given_name, family_name, full_name). */
+export async function registrati(
+  email: string, password: string, nome: string, cognome: string,
+): Promise<{ errore: string | null; confermare: boolean }> {
   const { data, error } = await client().auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: location.origin + "/" },
+    options: {
+      emailRedirectTo: location.origin + "/",
+      data: { given_name: nome, family_name: cognome, full_name: `${nome} ${cognome}` },
+    },
   });
   if (error) return { errore: messaggio(error), confermare: false };
   // Con la conferma email attiva, per un'email già registrata Supabase risponde senza errore e

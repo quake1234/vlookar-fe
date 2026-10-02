@@ -35,6 +35,16 @@ import Base from "../layouts/Base.astro";
       </div>
 
       <form id="form" class="form" novalidate hidden>
+        <div id="campi-nome" class="due-campi" hidden>
+          <div>
+            <label for="nome">Nome</label>
+            <input id="nome" type="text" autocomplete="given-name" maxlength="80" pattern=".*\S.*" />
+          </div>
+          <div>
+            <label for="cognome">Cognome</label>
+            <input id="cognome" type="text" autocomplete="family-name" maxlength="80" pattern=".*\S.*" />
+          </div>
+        </div>
         <div id="campo-email">
           <label for="email">Email</label>
           <input id="email" type="email" autocomplete="email" required />
@@ -105,6 +115,11 @@ import Base from "../layouts/Base.astro";
   .form input {
     width: 100%;
   }
+  .due-campi {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+  }
   label {
     font-weight: 500;
     font-size: 0.875rem;
@@ -148,6 +163,8 @@ import Base from "../layouts/Base.astro";
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const form = $<HTMLFormElement>("form");
+  const inNome = $<HTMLInputElement>("nome");
+  const inCognome = $<HTMLInputElement>("cognome");
   const inEmail = $<HTMLInputElement>("email");
   const inPassword = $<HTMLInputElement>("password");
   const errore = $("errore");
@@ -167,7 +184,7 @@ import Base from "../layouts/Base.astro";
     },
     signup: {
       titolo: "Crea un account",
-      sotto: "Ti serve solo l'email. I dati che hai già inserito in questo browser passano nel tuo account.",
+      sotto: "Ti servono nome, cognome ed email. I dati che hai già inserito in questo browser passano nel tuo account.",
       invia: "Crea l'account",
     },
     reset: {
@@ -193,6 +210,9 @@ import Base from "../layouts/Base.astro";
     document.title = `${t.titolo} — Vlookar`;
     invia.textContent = t.invia;
     $("con-google").hidden = modo !== "login" && modo !== "signup";
+    // Nome e cognome solo per chi si iscrive con l'email: con Google li dà Google.
+    $("campi-nome").hidden = modo !== "signup";
+    inNome.required = inCognome.required = modo === "signup";
     $("campo-email").hidden = modo === "new-password";
     $("campo-password").hidden = modo === "reset";
     const nuova = modo === "signup" || modo === "new-password";
@@ -223,6 +243,7 @@ import Base from "../layouts/Base.astro";
 
   function valido(): boolean {
     const campi = [
+      ...(modo === "signup" ? [inNome, inCognome] : []),
       ...(modo !== "new-password" ? [inEmail] : []),
       ...(modo !== "reset" ? [inPassword] : []),
     ];
@@ -244,7 +265,7 @@ import Base from "../layouts/Base.astro";
         if (err) return mostraErrore(err);
         location.href = dopo;
       } else if (modo === "signup") {
-        const r = await accesso.registrati(email, password);
+        const r = await accesso.registrati(email, password, inNome.value.trim(), inCognome.value.trim());
         if (r.errore) return mostraErrore(r.errore);
         if (!r.confermare) {
           location.href = dopo;
