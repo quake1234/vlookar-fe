@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Vlookar: le due ruote del logo (vroomy-backend/docs/logo). Colori della grafica "cruscotto";
-       il favicon segue il tema del browser, non il pulsante del sito. -->
+  <!-- Vlookar: solo le due ruote del logo, senza fondo. Nere col tema chiaro del browser,
+       bianche con quello scuro; il mozzo resta ambra. Non segue il pulsante del sito. -->
   <style>
-    .bg { fill: #16191c; }
-    .w { fill: none; stroke: #f3f2ee; }
+    .w { fill: none; stroke: #16191c; }
     .sig { fill: #e09400; }
     @media (prefers-color-scheme: dark) {
-      .bg { fill: #e6e4df; }
-      .w { stroke: #111315; }
+      .w { stroke: #ffffff; }
       .sig { fill: #f5a300; }
     }
   </style>
@@ -31,7 +29,6 @@
       <circle class="sig" r="3.2"/>
     </g>
   </defs>
-  <rect class="bg" width="64" height="64" rx="4"/>
-  <use href="#ruota" transform="translate(17.5,32) scale(0.66)"/>
-  <use href="#ruota" transform="translate(46.5,32) scale(0.66) rotate(18)"/>
+  <use href="#ruota" transform="translate(16,32) scale(0.76)"/>
+  <use href="#ruota" transform="translate(48,32) scale(0.76) rotate(18)"/>
 </svg>
