@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 ---
 
-<Base title="Scheda auto — Vlookar">
+<Base title="Scheda auto — Vlookar" pubblica>
   <div class="wrap">
     <nav class="briciole" aria-label="Percorso">
       <a href="/">Auto</a><span aria-hidden="true">/</span><span id="bc-marca">…</span><span aria-hidden="true">/</span><span id="bc-modello">…</span>
@@ -22,7 +22,7 @@ import Base from "../layouts/Base.astro";
             <p class="totale-riga"><span class="totale-da">a</span><span id="tot-max" class="totale-num cifra">—</span><span class="totale-euro">€</span></p>
           </div>
           <p id="totale-stato" class="totale-stato" hidden></p>
-          <p class="totale-composizione">Assicurazione + bollo + tagliandi <span class="origine origine-calcolato">Calcolato</span></p>
+          <p class="totale-composizione"><span id="tot-composizione">Assicurazione + bollo + tagliandi</span> <span class="origine origine-calcolato">Calcolato</span></p>
         </section>
       </div>
       <dl id="specifiche" class="specifiche" hidden></dl>
@@ -35,13 +35,13 @@ import Base from "../layouts/Base.astro";
     </div>
 
     <div id="servono-dati" class="avviso avviso-azione" hidden>
-      <p>Per calcolare bollo e assicurazione servono la tua regione e, se vuoi una stima su misura, età, classe di merito e via.</p>
+      <p>Per calcolare il bollo serve la tua regione; per stimare l'assicurazione anche via, data di nascita e classe di merito.</p>
       <button id="inserisci-dati" class="btn" type="button">Inserisci i dati</button>
     </div>
 
     <div id="attesa" class="attesa" role="status" aria-live="polite" hidden>
       <span class="attesa-barra" aria-hidden="true"></span>
-      <p><strong>Stiamo stimando prezzo, assicurazione, tagliando e problemi tipici.</strong> La prima volta che qualcuno cerca quest'auto può volerci fino a un minuto; intanto qui sotto trovi i dati già pronti.</p>
+      <p><strong>Stiamo stimando prezzo, tagliando e problemi tipici.</strong> La prima volta che qualcuno cerca quest'auto può volerci fino a un minuto; intanto qui sotto trovi i dati già pronti.</p>
     </div>
 
     <div id="errore" class="avviso avviso-azione" role="alert" hidden></div>

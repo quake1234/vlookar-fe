@@ -78,7 +78,6 @@ export interface Scheda {
     alimentazione: string | null;
     prezzo_nuovo_eur: IntervalloConNota | null;
     prezzo_usato_eur: IntervalloConNota | null;
-    assicurazione_annua_eur: IntervalloConNota | null;
     problemi: Problema[];
     richiami?: Array<{ periodo: string | null; descrizione: string }>;
     cosa_controllare?: string[];
@@ -123,20 +122,20 @@ export interface Scheda {
       barra_media: number | null;
     }>;
   };
+  /** Solo per chi ha fatto accesso e ha nel profilo via, data di nascita e classe di merito. */
   assicurazione: null | {
     origine: "stima_llm";
     min: number | null;
     max: number | null;
-    fascia: string | null;
     eta: number | null;
     nota: string | null;
-    note: string[];
-    personalizzata: boolean;     // per il singolo guidatore, o media italiana in 1ª classe
-    classe: string | null;       // 'nuova' | '1' … '14'; null = non indicata
-    luogo: string | null;
+    classe: string;              // 'nuova' | '1' … '14'
+    luogo: string;
     modello_llm: string | null;
-    da_calcolare: boolean;       // la stima personalizzata non è ancora pronta: chiedere /assicurazione
+    da_calcolare: boolean;       // la stima non è ancora pronta: chiedere /assicurazione
   };
+  /** Perché manca l'assicurazione: 'accesso', oppure 'via', 'nascita', 'classe' del profilo. */
+  assicurazione_mancano: string[];
   tagliando: null | {
     origine: "stima_llm";
     officina_autorizzata: Intervallo | null;
@@ -151,8 +150,10 @@ export interface Scheda {
     origine: "calcolato";
     min: number | null;
     max: number | null;
+    /** false: solo bollo + tagliandi (chi non ha fatto accesso non vede l'assicurazione) */
+    con_assicurazione: boolean;
     componenti?: {
-      assicurazione: Intervallo;
+      assicurazione?: Intervallo;
       bollo: number;
       tagliandi: Intervallo;
     };
@@ -226,14 +227,12 @@ export interface Indirizzo {
 export const indirizzi = (q: string, signal?: AbortSignal) =>
   post<Indirizzo[]>("/addresses", { q }, signal);
 
-/** Ciò che la scheda chiede all'utente. La via serve solo alla stima dell'assicurazione. */
+/** Ciò che la scheda manda al backend. Data di nascita, classe e via non ci sono: il backend
+ *  le prende dal profilo di chi ha fatto accesso, e solo con quelle stima l'assicurazione. */
 export interface ParametriScheda {
   regione?: string | null;
   anno?: number | null;
   km?: number | null;             // inizio della fascia di km
-  nascita?: string | null;
-  classe?: string | null;
-  indirizzo?: Indirizzo | null;
 }
 
 function corpo(p: ParametriScheda): Record<string, string | number> {
@@ -241,30 +240,16 @@ function corpo(p: ParametriScheda): Record<string, string | number> {
   if (p.regione) c.regione = p.regione;
   if (p.anno) c.anno = p.anno;
   if (p.km != null) c.km = p.km;
-  if (p.nascita) c.nascita = p.nascita;
-  if (p.classe) c.classe = p.classe;
-  // la via serve solo alla stima personalizzata, che scatta con classe o data di nascita
-  if (p.classe || p.nascita) {
-    const i = p.indirizzo;
-    if (i) {
-      c.via = i.via;
-      if (i.cap) c.cap = i.cap;
-      if (i.comune) c.comune = i.comune;
-      if (i.provincia) c.provincia = i.provincia;
-    }
-  }
   return c;
 }
 
 // Token dell'utente che ha fatto accesso: lo imposta lib/ipotesi.ts. Con il token il backend
-// prende data di nascita, classe e via dal profilo e lega la stima dell'assicurazione all'utente:
-// nel corpo restano solo regione, anno e km.
+// prende data di nascita, classe e via dal profilo e lega la stima dell'assicurazione all'utente.
 let tokenAttuale: () => Promise<string | null> = async () => null;
 export const usaToken = (fn: () => Promise<string | null>) => { tokenAttuale = fn; };
 
 async function conProfilo<T>(path: string, p: ParametriScheda): Promise<T> {
-  const token = await tokenAttuale();
-  return post<T>(path, token ? corpo({ regione: p.regione, anno: p.anno, km: p.km }) : corpo(p), undefined, token);
+  return post<T>(path, corpo(p), undefined, await tokenAttuale());
 }
 
 export const scheda = (id: number, p: ParametriScheda = {}) =>
@@ -275,7 +260,7 @@ export type StatoStima = { stato: "pronta" | "limite" | "errore" };
 /** Chiede la stima generale dell'allestimento; poi la scheda la contiene. */
 export const stima = (id: number) => get<StatoStima>(`/versions/${id}/estimate`);
 
-/** Chiede la stima dell'assicurazione per classe e luogo; poi la scheda la contiene. */
+/** Chiede la stima dell'assicurazione con i dati del profilo; poi la scheda la contiene. */
 export const assicurazione = (id: number, p: ParametriScheda) =>
   conProfilo<StatoStima>(`/versions/${id}/insurance`, p);
 

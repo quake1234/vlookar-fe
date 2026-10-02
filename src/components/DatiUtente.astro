@@ -18,10 +18,10 @@ const nascitaMax = `${oggi - 18}-12-31`;
       <h2 id="dati-titolo">I tuoi dati</h2>
       <button type="button" class="chiudi" data-chiudi aria-label="Chiudi" set:html={ICONE.chiudi} />
     </div>
-    <p class="muted small">Servono a calcolare i costi: il bollo cambia con la regione, l'assicurazione con la tua età, la tua classe di merito e dove abiti. Se indichi la data di nascita o la classe di merito, stimiamo l'assicurazione per te: data di nascita, classe e via vengono inviate al servizio di stima AI e conservate per non ripetere la domanda.</p>
+    <p class="muted small">Servono a calcolare i costi: il bollo cambia con la regione. L'assicurazione la stimiamo solo con via, data di nascita e classe di merito: vengono inviate al servizio di stima AI e conservate per non ripetere la domanda.</p>
 
     <div>
-      <label for="indirizzo">La tua via <span class="facoltativo">(facoltativa)</span></label>
+      <label for="indirizzo">La tua via <span class="facoltativo">(per l'assicurazione)</span></label>
       <div class="combo">
         <input id="indirizzo" type="text" role="combobox" autocomplete="off" spellcheck="false"
                aria-autocomplete="list" aria-expanded="false" aria-controls="indirizzo-lista"
@@ -41,16 +41,16 @@ const nascitaMax = `${oggi - 18}-12-31`;
         </select>
       </div>
       <div>
-        <label for="nascita">La tua data di nascita <span class="facoltativo">(facoltativa)</span></label>
+        <label for="nascita">La tua data di nascita <span class="facoltativo">(per l'assicurazione)</span></label>
         <input id="nascita" type="date" min={nascitaMin} max={nascitaMax} />
       </div>
       <div>
-        <label for="classe">Classe di merito <span class="facoltativo">(facoltativa)</span></label>
+        <label for="classe">Classe di merito <span class="facoltativo">(per l'assicurazione)</span></label>
         <select id="classe" aria-describedby="classe-nota">
           <option value="">Non la so</option>
           {CLASSI.map(([k, nome]) => <option value={k}>{nome}</option>)}
         </select>
-        <p id="classe-nota" class="nota small muted">È scritta sull'attestato di rischio. Se non la indichi, la stima è in 1ª classe.</p>
+        <p id="classe-nota" class="nota small muted">È scritta sull'attestato di rischio. Senza, non stimiamo l'assicurazione.</p>
       </div>
     </div>
 

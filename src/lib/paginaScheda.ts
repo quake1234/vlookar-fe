@@ -1,6 +1,7 @@
 // La logica della pagina scheda, condivisa da /car e /car-old: le due pagine hanno gli stessi id e
 // cambiano solo la grafica. Qui si leggono i dati dal backend e si riempie la pagina; nessun calcolo.
 
+import * as accesso from "./accesso";
 import * as api from "./api";
 import type { Intervallo, IntervalloConNota, Intervento, Problema, Scheda } from "./api";
 import { cifra, svuota } from "./anima";
@@ -32,7 +33,7 @@ const anno = ipotesi.annoDaUrl(location.search);   // dell'auto cercata, scelto 
 const km = ipotesi.kmDaUrl(location.search);       // dell'auto cercata, fascia scelta nella home; null = non indicata
 
 function parametri(i: ipotesi.Ipotesi | null): api.ParametriScheda {
-  return { regione: i?.regione, anno, km, nascita: i?.nascita, classe: i?.classe, indirizzo: i?.indirizzo };
+  return { regione: i?.regione, anno, km };
 }
 
 /** I dati con cui sono calcolati i costi, in sola lettura. */
@@ -72,22 +73,33 @@ let esitoStima: string | null = null;
 const stimaInAttesa = (s: Scheda) => s.stima_da_calcolare && esitoStima === null;
 const IN_CALCOLO = `<small>In calcolo…</small>`;
 
-// ---------------------------------------------------------------- assicurazione personalizzata
+// ---------------------------------------------------------------- assicurazione
 
-// Esito dell'ultima richiesta di stima personalizzata: 'limite' | 'errore' | null.
+// Esito dell'ultima richiesta di stima dell'assicurazione: 'limite' | 'errore' | null.
 let esitoAssicurazione: string | null = null;
 const inAttesa = (c: Scheda) => !!c.assicurazione?.da_calcolare && esitoAssicurazione === null;
 
 function perChi(a: NonNullable<Scheda["assicurazione"]>): string {
-  if (!a.personalizzata) return "Media italiana, 1ª classe di merito.";
-  const parti = [a.eta !== null ? `${a.eta} anni` : null, a.classe ? ipotesi.nomeClasse(a.classe) : null, a.luogo].filter(Boolean);
+  const parti = [a.eta !== null ? `${a.eta} anni` : null, ipotesi.nomeClasse(a.classe), a.luogo].filter(Boolean);
   return `Per te: ${parti.join(", ")}.`;
 }
 
 function notaEsitoAssicurazione(): string {
-  if (esitoAssicurazione === "limite") return "Troppe richieste nell'ultima ora: la stima su misura arriverà più tardi.";
-  if (esitoAssicurazione === "errore") return "La stima su misura non è disponibile ora: riprova più tardi.";
+  if (esitoAssicurazione === "limite") return "Troppe richieste nell'ultima ora: la stima arriverà più tardi.";
+  if (esitoAssicurazione === "errore") return "La stima non è disponibile ora: riprova più tardi.";
   return "";
+}
+
+const DATO: Record<string, string> = { via: "la tua via", nascita: "la data di nascita", classe: "la classe di merito" };
+
+/** Perché l'assicurazione manca, con il pulsante per rimediare (backend: assicurazione_mancano). */
+function senzaAssicurazione(mancano: string[]): string {
+  if (mancano.includes("accesso"))
+    return `<span class="ass-accedi">Accedi per vedere la stima della tua assicurazione.</span>
+      <button type="button" class="btn" data-accedi>Accedi</button>`;
+  const voci = mancano.map((k) => DATO[k] ?? k);
+  const elenco = voci.length > 1 ? voci.slice(0, -1).join(", ") + " e " + voci.at(-1) : voci[0];
+  return `Per stimarla servono ${esc(elenco)}. <button type="button" class="btn-link" data-dati>Completa i tuoi dati</button>`;
 }
 
 // ---------------------------------------------------------------- stima per chilometraggio
@@ -163,14 +175,16 @@ function renderVoci(c: Scheda) {
   $("bollo-asterisco").hidden = !c.bollo.eccezioni?.length;
 
   const ass = c.assicurazione;
-  if (inAttesa(c) || (!ass && stimaInAttesa(c))) $("ass-importo").innerHTML = IN_CALCOLO;
+  // senza assicurazione (accesso o dati mancanti) nessuna cifra: al suo posto il perché e il pulsante
+  $("ass-importo").hidden = !ass;
+  if (inAttesa(c)) $("ass-importo").innerHTML = IN_CALCOLO;
   else importo($("ass-importo"), ass && ass.min !== null && ass.max !== null ? { min: ass.min, max: ass.max } : null);
-  $("ass-per-chi").textContent = ass
-    ? (inAttesa(c) ? "Stiamo stimando il premio con la tua età, la tua classe e la tua via: può volerci fino a un minuto." : perChi(ass))
-    : "";
+  if (ass) $("ass-per-chi").textContent = inAttesa(c)
+    ? "Stiamo stimando il premio con la tua età, la tua classe e la tua via: può volerci fino a un minuto."
+    : perChi(ass);
+  else $("ass-per-chi").innerHTML = c.assicurazione_mancano.length ? senzaAssicurazione(c.assicurazione_mancano) : "";
   $("ass-nota").textContent = ass && !inAttesa(c)
-    ? [ass.fascia ? `Guidatore ${ass.fascia}${ass.eta !== null ? ` (hai ${ass.eta} anni)` : ""}.` : "",
-       ...ass.note.map(frase), notaEsitoAssicurazione(), ass.nota ?? ""].filter(Boolean).join(" ")
+    ? [notaEsitoAssicurazione(), ass.nota ?? ""].filter(Boolean).join(" ")
     : "";
 
   const tagliando = (el: HTMLElement, r: Intervallo | null | undefined) => {
@@ -204,6 +218,12 @@ function renderQuadrante(q: Scheda["mantenimento"]["quadrante"]) {
 
 function renderTotale(c: Scheda) {
   const m = c.mantenimento;
+  // senza accesso il backend somma solo bollo e tagliandi
+  const conAss = m.con_assicurazione !== false;
+  const composizione = document.getElementById("tot-composizione");
+  if (composizione) composizione.textContent = conAss
+    ? (composizione.dataset.conAss ??= composizione.textContent ?? "")
+    : "Bollo e tagliandi sommati (senza assicurazione)";
   const totale = $("totale");
   const stato = $("totale-stato");
   const min = $("tot-min");
@@ -218,7 +238,7 @@ function renderTotale(c: Scheda) {
     svuota(max, "—");
     $("mini-valore").textContent = "—";
     stato.textContent = inAttesa(c) ? "Stiamo stimando la tua assicurazione."
-      : aspetta ? "Stiamo stimando assicurazione e tagliando."
+      : aspetta ? "Stiamo stimando il tagliando."
       : elencoMancanti(m.mancano) + ": totale non calcolabile.";
     stato.hidden = false;
     return;
@@ -390,8 +410,8 @@ function renderSenzaStima(s: Scheda) {
     return;
   }
   senzaStima.innerHTML = `<p>${esc(esitoStima === "limite"
-    ? "Abbiamo ricevuto troppe richieste nell'ultima ora. Riprova più tardi per vedere prezzo, assicurazione, tagliando e problemi tipici."
-    : "Il servizio di stima non risponde in questo momento. Riprova tra poco per vedere prezzo, assicurazione, tagliando e problemi tipici.")}</p>
+    ? "Abbiamo ricevuto troppe richieste nell'ultima ora. Riprova più tardi per vedere prezzo, tagliando e problemi tipici."
+    : "Il servizio di stima non risponde in questo momento. Riprova tra poco per vedere prezzo, tagliando e problemi tipici.")}</p>
     <button type="button" class="btn" data-riprova>Riprova</button>`;
   senzaStima.hidden = false;
 }
@@ -515,6 +535,12 @@ function chiediDati() {
 
 $("modifica").addEventListener("click", ipotesi.apriDati);
 $("inserisci-dati").addEventListener("click", ipotesi.apriDati);
+// Pulsanti scritti da senzaAssicurazione(), che ridisegna il paragrafo a ogni scheda.
+$("ass-per-chi").addEventListener("click", (e) => {
+  const b = (e.target as HTMLElement).closest("button");
+  if (b?.hasAttribute("data-dati")) ipotesi.apriDati();
+  else if (b?.hasAttribute("data-accedi")) accesso.vaiAdAccesso();
+});
 
 // Dati salvati o cancellati dal form o dal menu utente.
 ipotesi.suCambio((i) => {

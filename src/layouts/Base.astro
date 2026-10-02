@@ -10,11 +10,12 @@ interface Props {
   title: string;
   description?: string;
   legenda?: boolean;   // la home la mostra già nel corpo della pagina
-  pubblica?: boolean;  // visibile senza accesso: solo /login
+  pubblica?: boolean;  // visibile senza accesso: home, scheda e /login (le altre portano a /login)
 }
 
 const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazione, bollo e problemi tipici.", legenda = true, pubblica = false } = Astro.props;
 // Tutto il sito ha la grafica "cruscotto" (styles/cruscotto.css); /car-old resta com'era.
+const login = Astro.url.pathname.startsWith("/login");
 const cruscotto = !Astro.url.pathname.startsWith("/car-old");
 ---
 
@@ -48,7 +49,7 @@ const cruscotto = !Astro.url.pathname.startsWith("/car-old");
       <div class="wrap barra-interno">
         <a href="/" class="logo" aria-label="Vlookar, torna alla home"><Logo /></a>
         <div class="barra-destra">
-          <nav class="small"><a href="/">Scegli un'auto</a>{!pubblica && <a href="/history">Le tue ricerche</a>}</nav>
+          <nav class="small"><a href="/">Scegli un'auto</a>{!login && <a href="/history">Le tue ricerche</a>}</nav>
           {cruscotto && <button id="tema" class="tema-btn" type="button" aria-label="Tema chiaro o scuro" title="Tema chiaro o scuro">
             <span class="tema-sole" set:html={ICONE.sole} /><span class="tema-luna" set:html={ICONE.luna} />
           </button>}

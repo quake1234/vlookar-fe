@@ -121,8 +121,9 @@ export async function esci(): Promise<void> {
 }
 
 // ---------------------------------------------------------------- accesso obbligatorio
-// Decisione dell'utente del 2026-09-29: senza accesso non si usa il sito. Ogni pagina lo chiede
-// (layouts/Base.astro, <html data-accesso="obbligatorio">) tranne /login. Finché l'accesso non è
+// Le pagine che lo chiedono (layouts/Base.astro, <html data-accesso="obbligatorio">) portano a
+// /login chi non ha fatto accesso. Dal 2026-10-02 (decisione dell'utente) home e scheda sono
+// pubbliche, come /login: senza accesso manca solo l'assicurazione. Finché l'accesso non è
 // configurato (disponibile = false) il sito resta aperto: altrimenti nessuno potrebbe entrare.
 
 const obbligatorio = () => document.documentElement.dataset.accesso === "obbligatorio";
