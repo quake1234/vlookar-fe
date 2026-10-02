@@ -12,7 +12,6 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const attesa = $("attesa");
 const errore = $("errore");
 const senzaStima = $("senza-stima");
-const servonoDati = $("servono-dati");
 const calcolatore = $("calcolatore");
 const resto = $("resto");
 const mini = $("mini");
@@ -36,17 +35,23 @@ function parametri(i: ipotesi.Ipotesi | null): api.ParametriScheda {
   return { regione: i?.regione, anno, km };
 }
 
-/** I dati con cui sono calcolati i costi, in sola lettura. */
-function mostraProfilo(i: ipotesi.Ipotesi) {
-  const regione = ipotesi.nomeRegione(i.regione) ?? i.regione;
+/** Senza dati e senza accesso il pulsante della riga dei dati porta al login, non al form
+ *  (decisione dell'utente del 2026-10-02). Senza accesso configurato resta il form. */
+const accedere = () => !ipotesi.leggi() && !ipotesi.account() && accesso.disponibile;
+
+/** I dati con cui sono calcolati i costi, in sola lettura. Senza dati la scheda si mostra lo
+ *  stesso (bollo con la tariffa nazionale): il form si apre solo se l'utente lo chiede. */
+function mostraProfilo(i: ipotesi.Ipotesi | null) {
+  const regione = i ? ipotesi.nomeRegione(i.regione) ?? i.regione : "Non indicata";
   const voci: Array<[string, string]> = [
-    ["Dove vivi", i.indirizzo ? `${i.indirizzo.etichetta}, ${regione}` : regione],
+    ["Dove vivi", i?.indirizzo ? `${i.indirizzo.etichetta}, ${regione}` : regione],
     ["Auto", anno ? `Immatricolata nel ${anno}` : "Nuova"],
     ["Chilometri", km !== null ? ipotesi.nomeFasciaKm(km) : "Non indicati"],
-    ["Data di nascita", i.nascita ? formatData(i.nascita) : "Non indicata"],
-    ["Classe di merito", ipotesi.nomeClasse(i.classe) ?? "Non indicata"],
+    ["Data di nascita", i?.nascita ? formatData(i.nascita) : "Non indicata"],
+    ["Classe di merito", ipotesi.nomeClasse(i?.classe) ?? "Non indicata"],
   ];
   $("profilo-dati").innerHTML = voci.map(([k, v]) => `<div><dt class="etichetta">${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");
+  $("modifica").textContent = i ? "Modifica i tuoi dati" : accedere() ? "Accedi" : "Inserisci i tuoi dati";
   $("profilo").hidden = false;
 }
 
@@ -517,24 +522,9 @@ function mostraErrore(testo: string, versoHome = false) {
   errore.hidden = false;
 }
 
-/** Dati assenti (primo accesso o cancellati): la scheda aspetta, e il form si apre. */
-function chiediDati() {
-  $("profilo").hidden = true;
-  calcolatore.hidden = true;
-  mantenimento.hidden = true;
-  mini.hidden = true;
-  resto.hidden = true;
-  errore.hidden = true;
-  attesa.hidden = true;
-  senzaStima.hidden = true;
-  servonoDati.hidden = false;
-  ipotesi.apriDati();
-}
-
 // ---------------------------------------------------------------- eventi
 
-$("modifica").addEventListener("click", ipotesi.apriDati);
-$("inserisci-dati").addEventListener("click", ipotesi.apriDati);
+$("modifica").addEventListener("click", () => (accedere() ? accesso.vaiAdAccesso() : ipotesi.apriDati()));
 // Pulsanti scritti da senzaAssicurazione(), che ridisegna il paragrafo a ogni scheda.
 $("ass-per-chi").addEventListener("click", (e) => {
   const b = (e.target as HTMLElement).closest("button");
@@ -545,8 +535,6 @@ $("ass-per-chi").addEventListener("click", (e) => {
 // Dati salvati o cancellati dal form o dal menu utente.
 ipotesi.suCambio((i) => {
   if (!Number.isInteger(id) || id <= 0) return;
-  if (!i) return chiediDati();
-  servonoDati.hidden = true;
   mostraProfilo(i);
   carica(i);
 });
@@ -561,12 +549,6 @@ if (!Number.isInteger(id) || id <= 0) {
 } else {
   await ipotesi.attendi();   // con l'accesso i dati arrivano dal backend
   const salvate = ipotesi.leggi();
-  if (salvate) {
-    mostraProfilo(salvate);
-    carica(salvate);
-  } else {
-    chiediDati();
-    // Nel frattempo si prepara la stima: la risposta finisce in cache e arriverà subito.
-    api.stima(id).catch(() => {});
-  }
+  mostraProfilo(salvate);
+  carica(salvate);
 }
