@@ -35,7 +35,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
 <Base title="Scheda auto — Vroomy">
   <div class="wrap cruscotto">
     <nav class="briciole" aria-label="Percorso">
-      <a href="/">Auto</a><span aria-hidden="true">/</span><span id="bc-marca">…</span><span aria-hidden="true">/</span><span id="bc-modello">…</span>
+      <a href="/">Auto</a><span aria-hidden="true">/</span><span id="bc-marca">…</span><span aria-hidden="true">/</span><span id="bc-modello">…</span><span class="bc-versione" aria-hidden="true">/</span><span id="bc-versione" class="bc-versione"></span>
     </nav>
 
     <header class="testata">
@@ -46,8 +46,11 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
       </div>
     </header>
 
-    <!-- i dati dell'auto, in fila come il computer di bordo -->
-    <dl id="specifiche" class="specifiche" hidden></dl>
+    <!-- i dati dell'auto, in fila come il computer di bordo; sul telefono chiusi sotto "Dettagli" -->
+    <details id="dettagli" class="dettagli" open>
+      <summary>Dettagli</summary>
+      <dl id="specifiche" class="specifiche" hidden></dl>
+    </details>
 
     <!-- i dati con cui sono calcolati i costi: si cambiano dal form, non qui -->
     <div id="profilo" class="profilo" hidden>
@@ -160,6 +163,27 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
   }
   .briciole a {
     color: var(--grafite);
+  }
+
+  /* la versione nel percorso solo sul telefono, dove prende il posto del titolo */
+  .bc-versione {
+    display: none;
+  }
+
+  /* ---- telefono: niente titolo (il percorso dice già marca, modello e versione), niente
+     "Calcolato per" (i dati si cambiano dal menu utente), dati dell'auto sotto "Dettagli" */
+  @media (max-width: 559px) {
+    .bc-versione {
+      display: inline;
+    }
+    .briciole {
+      padding-bottom: 20px;
+    }
+    .testata,
+    .compatta,
+    .profilo {
+      display: none !important;
+    }
   }
 
   /* ---- testata: il nome come su un badge del portellone, la versione sotto */
@@ -594,6 +618,49 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     color: var(--grafite);
   }
 
+  /* ---- "Dettagli": da tablet in su l'intestazione sparisce e resta la fila dei dati */
+  .dettagli:has(> .specifiche[hidden]) {
+    display: none;
+  }
+  .dettagli > summary {
+    display: none;
+  }
+  @media (max-width: 559px) {
+    .dettagli {
+      margin-bottom: 24px;
+      border: 1px solid var(--filo);
+      border-radius: 6px;
+      background: var(--carta-2);
+    }
+    .dettagli > summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      font-weight: 600;
+      list-style: none;
+    }
+    .dettagli > summary::-webkit-details-marker {
+      display: none;
+    }
+    .dettagli > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--grafite);
+      border-bottom: 2px solid var(--grafite);
+      transform: translateY(-2px) rotate(45deg);
+    }
+    .dettagli[open] > summary::after {
+      transform: translateY(2px) rotate(-135deg);
+    }
+    .dettagli .specifiche {
+      border: 0;
+      border-top: 1px solid var(--filo);
+      border-radius: 0 0 6px 6px;
+    }
+  }
+
   /* ---- computer di bordo: i dati dell'auto in una fila, separati da filetti */
   .specifiche {
     display: grid;
@@ -912,4 +979,11 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
 
 <script>
   import "../lib/paginaScheda";
+
+  // "Dettagli": chiuso sul telefono, sempre aperto (e senza intestazione) da tablet in su.
+  const dettagli = document.getElementById("dettagli") as HTMLDetailsElement;
+  const telefono = matchMedia("(max-width: 559px)");
+  const adatta = () => (dettagli.open = !telefono.matches);
+  adatta();
+  telefono.addEventListener("change", adatta);
 </script>

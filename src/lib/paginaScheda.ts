@@ -252,6 +252,9 @@ function renderTesta(s: Scheda) {
   compattaPronta = true;
   $("bc-marca").textContent = marca;
   $("bc-modello").textContent = modello;
+  // la versione nel percorso c'è solo su /car (sul telefono sostituisce il titolo)
+  const bcVersione = document.getElementById("bc-versione");
+  if (bcVersione) bcVersione.textContent = a.nome;
 
   const st = s.stima;
   // le note sul prezzo sono lunghe: stanno nel blocco "Prezzo", sotto il calcolatore
