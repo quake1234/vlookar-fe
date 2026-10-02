@@ -2,7 +2,9 @@
 import "../styles/tema.css";
 import "../styles/cruscotto.css";
 import DatiUtente from "../components/DatiUtente.astro";
+import Logo from "../components/Logo.astro";
 import MenuUtente from "../components/MenuUtente.astro";
+import { ICONE } from "../lib/icone";
 
 interface Props {
   title: string;
@@ -21,9 +23,19 @@ const cruscotto = !Astro.url.pathname.startsWith("/car-old");
 <html lang="it" data-accesso={pubblica ? "libero" : "obbligatorio"} data-grafica={cruscotto ? "cruscotto" : undefined} class={pubblica ? undefined : "in-verifica"}>
   <head>
     <meta charset="utf-8" />
+    <!-- Tema scelto col pulsante della barra, prima di disegnare la pagina (niente lampo).
+         Solo per la grafica "cruscotto": /car-old segue sempre il sistema. -->
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("vroomy-tema");
+        if ((t === "light" || t === "dark") && document.documentElement.dataset.grafica) document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -33,9 +45,12 @@ const cruscotto = !Astro.url.pathname.startsWith("/car-old");
   <body>
     <header class="barra">
       <div class="wrap barra-interno">
-        <a href="/" class="logo" aria-label="Vroomy, torna alla home">vroomy</a>
+        <a href="/" class="logo" aria-label="Vlookar, torna alla home"><Logo /></a>
         <div class="barra-destra">
           <nav class="small"><a href="/">Scegli un'auto</a>{!pubblica && <a href="/history">Le tue ricerche</a>}</nav>
+          {cruscotto && <button id="tema" class="tema-btn" type="button" aria-label="Tema chiaro o scuro" title="Tema chiaro o scuro">
+            <span class="tema-sole" set:html={ICONE.sole} /><span class="tema-luna" set:html={ICONE.luna} />
+          </button>}
           <MenuUtente />
         </div>
       </div>
@@ -66,6 +81,16 @@ const cruscotto = !Astro.url.pathname.startsWith("/car-old");
   accesso.sorvegliaUscita();
   accesso.accessoVerificato().then(() => document.documentElement.classList.remove("in-verifica"));
 
+  // Tema: il pulsante passa all'altro rispetto a quello che si vede e lo ricorda in questo browser.
+  document.getElementById("tema")?.addEventListener("click", () => {
+    const scuro = getComputedStyle(document.documentElement).colorScheme === "dark";
+    const t = scuro ? "light" : "dark";
+    document.documentElement.dataset.theme = t;
+    try {
+      localStorage.setItem("vroomy-tema", t);
+    } catch {}
+  });
+
   // Abbaglianti del cursore (styles/cruscotto.css): accesi finché il tasto del mouse è premuto.
   const radice = document.documentElement;
   if (radice.dataset.grafica === "cruscotto") {
@@ -95,9 +120,8 @@ const cruscotto = !Astro.url.pathname.startsWith("/car-old");
     min-height: 56px;
   }
   .logo {
-    font-weight: 700;
-    font-size: 1.375rem;
-    letter-spacing: -0.045em;
+    display: block;
+    padding: 4px 0;
     color: var(--inchiostro);
     text-decoration: none;
   }
@@ -110,15 +134,41 @@ const cruscotto = !Astro.url.pathname.startsWith("/car-old");
     display: flex;
     gap: 16px;
   }
-  nav a {
-    font-family: var(--mono);
-    font-size: 0.8125rem;
+  /* Tema: si vede l'icona di quello a cui si passa (luna sul chiaro, sole sullo scuro). */
+  .tema-btn {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-right: -8px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--inchiostro);
   }
-  /* Telefoni stretti: il logo porta già alla home, resta solo "Le tue ricerche". */
-  @media (max-width: 479px) {
-    nav a[href="/"]:not(:only-child) {
+  .tema-btn:hover {
+    background: var(--carta-2);
+  }
+  .tema-btn > span {
+    line-height: 0;
+  }
+  .tema-sole {
+    display: none;
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .tema-sole {
+      display: inline;
+    }
+    :global(:root:not([data-theme="light"])) .tema-luna {
       display: none;
     }
+  }
+  :global(:root[data-theme="dark"]) .tema-sole {
+    display: inline;
+  }
+  :global(:root[data-theme="dark"]) .tema-luna {
+    display: none;
   }
   main {
     padding-bottom: 72px;

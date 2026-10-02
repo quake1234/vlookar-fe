@@ -198,10 +198,10 @@ const nascitaMax = `${oggi - 18}-12-31`;
     background: var(--pannello);
     border-color: var(--filo);
     border-radius: 14px;
-    box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.9);
+    box-shadow: var(--ombra-finestra);
   }
   :global([data-grafica="cruscotto"]) .dati::backdrop {
-    background: rgb(0 0 0 / 65%);
+    background: var(--velo);
   }
   :global([data-grafica="cruscotto"]) .dati-testa h2 {
     font-family: var(--condensato);

@@ -253,7 +253,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     background: var(--pannello);
     border: 1px solid var(--filo);
     border-radius: 14px;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 20px 40px -24px rgb(0 0 0 / 0.8);
+    box-shadow: var(--ombra-pannello);
   }
   @media (min-width: 1000px) {
     /* voci a sinistra, quadrante a destra; nel codice il quadrante resta primo (si legge prima il totale) */
@@ -465,7 +465,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     font-family: var(--condensato);
     font-size: 0.9375rem;
     font-weight: 500;
-    color: var(--segnale);
+    color: var(--segnale-testo);
   }
   /* in attesa dei dati: al posto delle cifre, "Calcolo in corso…" */
   .totale-calcolo {
@@ -797,7 +797,7 @@ const arcoRosso = `M ${punto(inizioRosso, 80)} A 80 80 0 0 1 ${punto(45, 80)}`;
     font-family: var(--condensato);
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--segnale);
+    color: var(--segnale-testo);
   }
   @media (min-width: 1000px) {
     .mini {
