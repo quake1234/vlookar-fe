@@ -1,5 +1,6 @@
 ---
 import "../styles/tema.css";
+import "../styles/cruscotto.css";
 import DatiUtente from "../components/DatiUtente.astro";
 import MenuUtente from "../components/MenuUtente.astro";
 
@@ -11,11 +12,13 @@ interface Props {
 }
 
 const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazione, bollo e problemi tipici.", legenda = true, pubblica = false } = Astro.props;
+// Tutto il sito ha la grafica "cruscotto" (styles/cruscotto.css); /car-old resta com'era.
+const cruscotto = !Astro.url.pathname.startsWith("/car-old");
 ---
 
 <!doctype html>
 <!-- Senza accesso la pagina resta nascosta finché lib/accesso.ts non ha controllato la sessione. -->
-<html lang="it" data-accesso={pubblica ? "libero" : "obbligatorio"} class={pubblica ? undefined : "in-verifica"}>
+<html lang="it" data-accesso={pubblica ? "libero" : "obbligatorio"} data-grafica={cruscotto ? "cruscotto" : undefined} class={pubblica ? undefined : "in-verifica"}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -24,6 +27,7 @@ const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazion
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    {cruscotto && <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />}
     <title>{title}</title>
   </head>
   <body>
@@ -61,6 +65,18 @@ const { title, description = "Quanto costa davvero un'auto: prezzo, assicurazion
 
   accesso.sorvegliaUscita();
   accesso.accessoVerificato().then(() => document.documentElement.classList.remove("in-verifica"));
+
+  // Abbaglianti del cursore (styles/cruscotto.css): accesi finché il tasto del mouse è premuto.
+  const radice = document.documentElement;
+  if (radice.dataset.grafica === "cruscotto") {
+    const spegni = () => radice.classList.remove("abbaglianti");
+    addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse") radice.classList.add("abbaglianti");
+    });
+    addEventListener("pointerup", spegni);
+    addEventListener("pointercancel", spegni);
+    addEventListener("blur", spegni);
+  }
 </script>
 
 

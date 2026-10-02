@@ -11,7 +11,7 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
         Scegli l'auto: bollo, assicurazione e tagliandi di un anno, sommati, con l'origine di ogni cifra.
       </p>
 
-      <form id="scelta" class="scelta" novalidate>
+      <form id="scelta" class="scelta pannello" novalidate>
         <ol class="passi">
           <li class="passo">
             <span class="passo-n" aria-hidden="true">1</span>
@@ -105,9 +105,10 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     padding-bottom: clamp(12px, 3vh, 40px);
   }
   h1 {
-    font-size: min(clamp(2rem, 9vw, 6.25rem), 10.5vh);
-    font-weight: 700;
-    letter-spacing: -0.045em;
+    font-family: var(--condensato);
+    font-size: min(clamp(2.75rem, 10vw, 7rem), 11.5vh);
+    font-weight: 600;
+    letter-spacing: -0.01em;
     line-height: 0.95;
     max-width: 9.5em;
   }
@@ -117,11 +118,14 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     margin: clamp(8px, 1.8vh, 20px) 0 clamp(12px, 3vh, 36px);
     max-width: 32em;
   }
+  /* Il modulo nel pannello strumenti, come le voci della scheda. */
+  .scelta {
+    padding: clamp(6px, 1.2vh, 16px) 16px clamp(14px, 2.4vh, 24px);
+  }
   .passi {
     list-style: none;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--inchiostro);
   }
   /* Sul telefono l'etichetta sta dentro il riquadro del menu, in alto:
      una riga per passo invece di due. */
@@ -135,8 +139,9 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     border-bottom: 1px solid var(--filo);
   }
   .passo-n {
-    font-family: var(--mono);
-    font-size: 0.8125rem;
+    font-family: var(--condensato);
+    font-size: 1.125rem;
+    font-weight: 600;
     color: var(--grafite);
   }
   .passo label {
@@ -148,7 +153,7 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     pointer-events: none;
   }
   .passo label .etichetta {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
   }
   .passo select {
     padding: 17px 12px 3px;
@@ -184,16 +189,18 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
   }
   .stato {
     margin: 0;
-    font-family: var(--mono);
   }
   #vai {
     flex: none;
     min-width: 180px;
   }
   .origini h2 {
-    font-size: 1rem;
+    font-family: var(--condensato);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--inchiostro);
+    border-bottom: 1px solid var(--filo);
   }
   /* Sotto il modulo, la legenda si riduce ai tre campioni in fila. */
   .origini dl {
@@ -206,7 +213,7 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.875rem;
   }
   .origine-voce dd {
@@ -224,10 +231,12 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     background: currentColor;
   }
   .campione-ufficiale {
+    color: var(--ufficiale);
     background: transparent;
     box-shadow: inset 0 0 0 2px currentColor;
   }
   .campione-stima {
+    color: var(--segnale);
     background: var(--tratteggio);
     box-shadow: inset 0 0 0 1px currentColor;
   }
@@ -262,7 +271,7 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
       position: static;
     }
     .passo label .etichetta {
-      font-size: 0.6875rem;
+      font-size: 0.875rem;
     }
     .passo select {
       padding: 0 12px;
@@ -270,7 +279,7 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
     }
     .filtri-titolo {
       display: block;
-      font-size: 0.6875rem;
+      font-size: 0.875rem;
     }
     .passo .filtro label {
       position: absolute;
@@ -293,7 +302,7 @@ import { anniImmatricolazione, FASCE_KM, nomeFasciaKm } from "../lib/ipotesi";
       margin-top: 12px;
     }
     .origini h2 {
-      font-size: 1.25rem;
+      font-size: 1.625rem;
       padding-bottom: 14px;
     }
     .origini dl {

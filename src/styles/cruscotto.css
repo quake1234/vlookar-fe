@@ -1,0 +1,76 @@
+/* Grafica "cruscotto", su tutto il sito tranne /car-old: tema scuro, cifre e titoli condensati,
+   pannelli arrotondati, ambra solo per il totale e l'azione principale. Si appoggia a tema.css e
+   ne cambia i colori e alcune forme; vale quando <html> ha data-grafica="cruscotto"
+   (layouts/Base.astro). */
+
+/* :not(#_) alza la specificità sopra quella dei temi di tema.css, chiaro o scuro che sia */
+:root[data-grafica="cruscotto"]:not(#_) {
+  --font: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --condensato: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --carta: #111315;
+  --carta-2: #1a1d20;
+  --pannello: #16191c;
+  --inchiostro: #e6e4df;
+  --grafite: #979a9e;         /* testo secondario: 6,5:1 sul fondo */
+  --filo: #26292d;
+  --filo-forte: #3b3f44;
+  --segnale: #f5a300;         /* ambra delle lancette: solo totale e azione principale */
+  --su-segnale: #111315;
+  --ufficiale: #58c38f;
+  --fuorigiri: #e5392f;       /* zona rossa del quadrante: solo decorazione */
+  --neg: #ef6f5e;
+  --neg-soft: #3a1c19;
+  --warn: #f5a300;
+  --radius: 6px;
+  --radius-sm: 4px;
+  color-scheme: dark;
+}
+
+/* Etichette dei campi: testo normale, non maiuscolo spaziato. */
+[data-grafica="cruscotto"] .etichetta {
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Pannello strumenti: la cornice dei blocchi principali di ogni pagina. */
+[data-grafica="cruscotto"] .pannello {
+  background: var(--pannello);
+  border: 1px solid var(--filo);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 20px 40px -24px rgb(0 0 0 / 0.8);
+}
+
+[data-grafica="cruscotto"] .origine-ufficiale::before {
+  color: var(--ufficiale);
+}
+[data-grafica="cruscotto"] .origine-stima_llm::before {
+  color: var(--segnale);
+}
+[data-grafica="cruscotto"] .btn {
+  font-weight: 600;
+}
+[data-grafica="cruscotto"] .avviso {
+  border-left-color: var(--segnale);
+}
+
+/* Cursore a forma di auto: fari spenti sulla pagina, anabbaglianti sopra ciò che si clicca,
+   abbaglianti mentre si tiene premuto il tasto, ovunque. Il punto attivo (14 14) è sul muso.
+   Senza immagine: il cursore solito. */
+html[data-grafica="cruscotto"] {
+  cursor: url("/cursore/auto.svg") 14 14, auto;
+}
+[data-grafica="cruscotto"] :is(a[href], button:not(:disabled), select:not(:disabled), label[for], summary, [role="button"], [role="option"]):hover {
+  cursor: url("/cursore/auto-anabbaglianti.svg") 14 14, pointer;
+}
+/* abbaglianti a ogni clic, ovunque si prema: la classe la mette lo script di Base.astro
+   (non durante la corsa di /game, dove il cursore sparisce) */
+html[data-grafica="cruscotto"].abbaglianti:not(.in-corsa),
+html[data-grafica="cruscotto"].abbaglianti:not(.in-corsa) * {
+  cursor: url("/cursore/auto-abbaglianti.svg") 14 14, auto !important;
+}
+/* nei campi di testo resta la barra per scrivere */
+[data-grafica="cruscotto"] :is(input:not([type="button"], [type="submit"], [type="checkbox"], [type="radio"]), textarea) {
+  cursor: text;
+}

@@ -1,4 +1,4 @@
-// La logica della pagina scheda, condivisa da /car e /car-new: le due pagine hanno gli stessi id e
+// La logica della pagina scheda, condivisa da /car e /car-old: le due pagine hanno gli stessi id e
 // cambiano solo la grafica. Qui si leggono i dati dal backend e si riempie la pagina; nessun calcolo.
 
 import * as api from "./api";
@@ -182,7 +182,7 @@ function renderVoci(c: Scheda) {
   $("tag-nota").textContent = noteTagliando(c);
 }
 
-/** Il quadrante di /car-new (su /car non c'è): cifre delle tacche lunghe e posizioni della
+/** Il quadrante di /car (su /car-old non c'è): cifre delle tacche lunghe e posizioni della
  *  lancetta, così come arrivano dal backend. Senza scala: cifre vuote, lancetta a riposo. */
 function renderQuadrante(q: Scheda["mantenimento"]["quadrante"]) {
   const scala = document.querySelector<SVGElement>(".scala");

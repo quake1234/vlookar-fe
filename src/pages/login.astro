@@ -7,7 +7,7 @@ import Base from "../layouts/Base.astro";
 
 <Base title="Accedi — Vroomy" description="Accedi a Vroomy per ritrovare i tuoi dati su ogni dispositivo." legenda={false} pubblica>
   <div class="wrap accesso">
-    <section class="riquadro" aria-labelledby="titolo">
+    <section class="riquadro pannello" aria-labelledby="titolo">
       <h1 id="titolo">Accedi</h1>
       <p id="sottotitolo" class="muted">Ritrovi i tuoi dati (regione, data di nascita, classe di merito, via) su ogni dispositivo.</p>
 
@@ -63,12 +63,22 @@ import Base from "../layouts/Base.astro";
     padding-top: 48px;
   }
   .riquadro {
-    width: min(420px, 100%);
+    width: min(460px, 100%);
     display: grid;
     gap: 16px;
+    padding: 28px 24px;
+  }
+  @media (min-width: 560px) {
+    .riquadro {
+      padding: 36px 32px;
+    }
   }
   h1 {
-    font-size: 2rem;
+    font-family: var(--condensato);
+    font-size: 2.75rem;
+    font-weight: 600;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
   }
   .riquadro > p {
     margin: 0;
@@ -111,7 +121,8 @@ import Base from "../layouts/Base.astro";
   .esito,
   .gia-dentro {
     padding: 14px;
-    border: 1px solid var(--inchiostro);
+    background: var(--carta-2);
+    border: 1px solid var(--filo);
     border-radius: var(--radius-sm);
   }
   .gia-dentro p {

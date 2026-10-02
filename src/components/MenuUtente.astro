@@ -142,6 +142,29 @@ import { ICONE } from "../lib/icone";
     margin: 8px 0 0;
     font-size: 0.75rem;
   }
+
+  /* Grafica "cruscotto" (styles/cruscotto.css): pannello scuro, filetti sottili, voci in chiaro. */
+  :global([data-grafica="cruscotto"]) .icona-btn:hover,
+  :global([data-grafica="cruscotto"]) .icona-btn[aria-expanded="true"] {
+    border-color: var(--filo-forte);
+    background: var(--filo-forte);
+    color: var(--inchiostro);
+  }
+  :global([data-grafica="cruscotto"]) .pannello-menu {
+    background: var(--pannello);
+    border-color: var(--filo);
+    border-radius: 14px;
+    box-shadow: 0 20px 40px -16px rgb(0 0 0 / 0.8);
+  }
+  :global([data-grafica="cruscotto"]) .titolo {
+    font-weight: 600;
+  }
+  :global([data-grafica="cruscotto"]) .dati-elenco :global(dt) {
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
 </style>
 
 <script>

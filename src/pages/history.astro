@@ -87,12 +87,16 @@ import Base from "../layouts/Base.astro";
     gap: 10px;
   }
   h1 {
-    font-size: clamp(2rem, 6vw, 3.5rem);
-    letter-spacing: -0.045em;
+    font-family: var(--condensato);
+    font-size: clamp(2.75rem, 7vw, 4.75rem);
+    font-weight: 600;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
   }
   .testata p {
     margin: 0;
     max-width: 40em;
+    font-size: 1.0625rem;
   }
 
   /* ------------------------------------------------ filtri */
@@ -101,9 +105,10 @@ import Base from "../layouts/Base.astro";
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     align-items: end;
-    padding: 16px 0;
-    border-top: 1px solid var(--inchiostro);
-    border-bottom: 1px solid var(--filo);
+    padding: 16px 20px;
+    background: var(--carta-2);
+    border: 1px solid var(--filo);
+    border-radius: 6px;
   }
   .campo {
     display: grid;
@@ -157,21 +162,16 @@ import Base from "../layouts/Base.astro";
     border-collapse: collapse;
   }
   .tabella th {
-    font-family: var(--mono);
-    font-size: 0.6875rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
     color: var(--grafite);
     text-align: left;
     padding: 0 16px 10px 0;
-    border-bottom: 1px solid var(--inchiostro);
+    border-bottom: 1px solid var(--filo-forte);
     white-space: nowrap;
   }
   .tabella th .origine {
     margin-left: 8px;
-    text-transform: none;
-    letter-spacing: 0.04em;
   }
   .tabella :global(td) {
     padding: 14px 16px 14px 0;
@@ -180,7 +180,9 @@ import Base from "../layouts/Base.astro";
     text-align: left;
   }
   .tabella :global(.auto a) {
-    font-weight: 700;
+    font-family: var(--condensato);
+    font-size: 1.25rem;
+    font-weight: 600;
     color: var(--inchiostro);
   }
   .tabella :global(.versione) {
@@ -190,7 +192,9 @@ import Base from "../layouts/Base.astro";
     font-size: 0.875rem;
   }
   .tabella :global(.costo-cella) {
-    font-weight: 700;
+    font-family: var(--condensato);
+    font-size: 1.25rem;
+    font-weight: 600;
     white-space: nowrap;
   }
   .tabella :global(.costo-cella .origine) {
@@ -199,6 +203,8 @@ import Base from "../layouts/Base.astro";
     font-weight: 400;
   }
   .tabella :global(.costo-cella.mancante) {
+    font-family: var(--font);
+    font-size: 1rem;
     font-weight: 400;
     color: var(--grafite);
   }
@@ -251,10 +257,8 @@ import Base from "../layouts/Base.astro";
     }
     .tabella :global(td::before) {
       content: attr(data-etichetta);
-      font-family: var(--mono);
-      font-size: 0.6875rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      font-family: var(--font);
+      font-size: 0.8125rem;
       color: var(--grafite);
       text-align: left;
     }
