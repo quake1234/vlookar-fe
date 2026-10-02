@@ -3,7 +3,7 @@
 Il sito di Vlookar: scelta del veicolo (anno → marca → modello → allestimento) e scheda con prezzo,
 assicurazione, bollo e problemi tipici. Astro, sito statico.
 
-**Il resto del progetto sta nel repository del backend**, `quake1234/Vroomy-be` (in locale
+**Il resto del progetto sta nel repository del backend**, `quake1234/vlookar-be` (in locale
 `../vroomy-backend`): regole non negoziabili, architettura, piano tecnico e handoff sono nel suo
 `CLAUDE.md`. Leggilo prima di una modifica che non sia solo grafica. Il contratto tra i due è
 l'API REST del backend (`/docs`).
